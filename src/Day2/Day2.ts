@@ -6,3 +6,19 @@ const processor = new CodeProcessor();
 const processedCode = processor.processCodeString(inputCode);
 
 console.log(`After processing the code is:\n${processedCode}`);
+
+for (let noun = 0; noun <= 99; noun += 1) {
+  for (let verb = 0; verb <= 99; verb += 1) {
+    const opcodes = inputCode.split(',').map(s => parseInt(s.trim()));
+    opcodes[1] = noun;
+    opcodes[2] = verb;
+    processor.processCodes(opcodes);
+
+    if (opcodes[0] === 19690720) {
+      console.log(`Found match with noun ${noun} and verb ${verb}`);
+
+      const calculated = 100 * noun + verb;
+      console.log(`Which calculates to ${calculated}`);
+    }
+  }
+}
