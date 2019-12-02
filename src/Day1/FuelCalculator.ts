@@ -18,6 +18,5 @@ export class FuelCalculator {
     return moduleWeights
       .map(weight => this.fuelForModule(weight))
       .reduce((a, b) => a + b, 0);
-      var a = 4
   }
 }
