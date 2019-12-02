@@ -42,6 +42,20 @@ describe('FuelCalculator', () => {
     });
   });
 
+  describe('fuelForSpacecraftModulesOnly', () => {
+    it('should be 0 when no modules', () => {
+      expect(calculator.fuelForSpacecraftModulesOnly([])).to.equal(0);
+    });
+
+    it('should calculate single module', () => {
+      expect(calculator.fuelForSpacecraftModulesOnly([12])).to.equal(2);
+    });
+
+    it('should calculate multiple modules', () => {
+      expect(calculator.fuelForSpacecraftModulesOnly([12, 1969])).to.equal(656);
+    });
+  })
+
   describe('fuelForSpacecraft', () => {
     it('should be 0 when no modules', () => {
       expect(calculator.fuelForSpacecraft([])).to.equal(0);
@@ -54,5 +68,5 @@ describe('FuelCalculator', () => {
     it('should calculate multiple modules', () => {
       expect(calculator.fuelForSpacecraft([12, 1969])).to.equal(968);
     });
-  })
+  });
 });

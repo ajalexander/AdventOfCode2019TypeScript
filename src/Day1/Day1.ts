@@ -105,4 +105,5 @@ const inputs = [
 
 const calculator = new FuelCalculator();
 
-console.log(calculator.fuelForSpacecraft(inputs));
+console.log(`Fuel for modules only: ${calculator.fuelForSpacecraftModulesOnly(inputs)}`);
+console.log(`Total fuel: ${calculator.fuelForSpacecraft(inputs)}`);

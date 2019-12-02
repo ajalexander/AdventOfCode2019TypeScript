@@ -14,6 +14,12 @@ export class FuelCalculator {
     return runningTotal;
   }
 
+  fuelForSpacecraftModulesOnly(moduleWeights: number[]) : number {
+    return moduleWeights
+      .map(weight => this.fuelForMass(weight))
+      .reduce((a, b) => a + b, 0);
+  }
+
   fuelForSpacecraft(moduleWeights: number[]) : number {
     return moduleWeights
       .map(weight => this.fuelForModule(weight))
