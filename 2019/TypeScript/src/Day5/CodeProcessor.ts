@@ -111,7 +111,7 @@ export class CodeProcessor {
           if (targetIndex !== undefined) {
             index = targetIndex;
           } else {
-            index += 2;
+            index += 3;
           }
           break;
         case 6:
@@ -119,7 +119,7 @@ export class CodeProcessor {
           if (targetIndex !== undefined) {
             index = targetIndex;
           } else {
-            index += 2;
+            index += 3;
           }
           break;
         case 7:
