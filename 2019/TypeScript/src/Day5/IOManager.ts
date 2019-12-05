@@ -8,7 +8,7 @@ export class IOManager {
   }
 
   input() : number {
-    return readlineSync.questionInt('Input Value:');
+    return readlineSync.questionInt('Input Value: ');
   }
 
   output(value: number) {
