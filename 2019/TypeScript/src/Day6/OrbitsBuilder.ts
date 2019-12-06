@@ -29,7 +29,7 @@ export class OrbitNode {
     const orbitCount = directDistance + indirectDistances;
 
     // console.log(`Node #${this.name} - ${orbitCount}`);
-    
+
     return orbitCount;
   }
 
@@ -38,12 +38,17 @@ export class OrbitNode {
   }
 }
 
-interface NameToOrbitNodeMap extends Map<string, OrbitNode> {
+export interface NameToOrbitNodeMap extends Map<string, OrbitNode> {
 }
 
 interface InputParts {
   leftObject: string;
   rightObject: string;
+}
+
+export interface BuiltOrbits {
+  centerOfMass: OrbitNode;
+  orbitsMap: NameToOrbitNodeMap;
 }
 
 export class OrbitsBuilder {
@@ -91,10 +96,57 @@ export class OrbitsBuilder {
     return orbitsMap['COM'];
   }
 
-  buildOrbits(inputs: string[]) : OrbitNode | undefined {
+  buildOrbits(inputs: string[]) : BuiltOrbits {
     const parsedInputs = this.parseInputs(inputs);
     const orbitsMap = this.buildMap(parsedInputs);
     this.processOrbits(parsedInputs, orbitsMap);
-    return this.findCenterOfMass(orbitsMap);
+    const center = this.findCenterOfMass(orbitsMap);
+
+    return {
+      centerOfMass: center,
+      orbitsMap: orbitsMap
+    } as BuiltOrbits;
+  }
+}
+
+export class TransferStepsCalculator {
+  stepsToTarget(targetNode: OrbitNode, fromNode: OrbitNode) : OrbitNode[] {
+    const nodes = [];
+    let currentNode = fromNode;
+    while (currentNode.parent !== targetNode) {
+      nodes.push(currentNode.parent);
+      currentNode = currentNode.parent;
+    }
+    nodes.push(targetNode);
+    return nodes;
+  }
+
+  stepsBetweenNodes(builtOrbits: BuiltOrbits, startingNodeName: string, endingNodeName: string) : OrbitNode[] {
+    const startingNode = builtOrbits.orbitsMap[startingNodeName];
+    const endingNode = builtOrbits.orbitsMap[endingNodeName];
+
+    const nodesBetween = [];
+
+    const startToCenter = this.stepsToTarget(builtOrbits.centerOfMass, startingNode);
+    const endToCenter = this.stepsToTarget(builtOrbits.centerOfMass, endingNode);
+
+    for (let index = 0; index < startToCenter.length; index += 1) {
+      const node = startToCenter[index];
+      nodesBetween.push(node);
+      const indexInOtherPath = endToCenter.indexOf(node);
+      if (indexInOtherPath >= 0) {
+        for (index = 0; index < indexInOtherPath; index += 1) {
+          const otherNode = endToCenter[index];
+          nodesBetween.push(otherNode);
+        }
+        break;
+      }
+    }
+
+    return nodesBetween;
+  }
+
+  transfersRequiredBetweenNodes(builtOrbits: BuiltOrbits, startingNodeName: string, endingNodeName: string) : number {
+    return this.stepsBetweenNodes(builtOrbits, startingNodeName, endingNodeName).length - 1;
   }
 }
