@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import 'mocha';
 
-import { ImageProcessor, Layer } from './ImageProcessor';
+import { Color, ImageProcessor, Layer } from './ImageProcessor';
 
 describe('ImageProcessor', () => {
   let processor;
@@ -24,6 +24,19 @@ describe('ImageProcessor', () => {
       expect(layers[1].rows.length).to.equal(2);
       expect(layers[1].rows[0]).to.eql([7,8,9]);
       expect(layers[1].rows[1]).to.eql([0,1,2]);
+    });
+  });
+
+  describe('render', () => {
+    it('should render', () => {
+      processor = new ImageProcessor(2, 2);
+      const layers = processor.definitionToLayers('0222112222120000');
+      const rendered = processor.render(layers);
+
+      expect(rendered.pixels[0][0]).to.equal(Color.black);
+      expect(rendered.pixels[0][1]).to.equal(Color.white);
+      expect(rendered.pixels[1][0]).to.equal(Color.white);
+      expect(rendered.pixels[1][1]).to.equal(Color.black);
     });
   });
 });

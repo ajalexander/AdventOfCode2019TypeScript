@@ -17,3 +17,6 @@ layers.forEach((layer, _) => {
 const onesInLayer = bestLayer.countOfDigit(1);
 const twosInLayer = bestLayer.countOfDigit(2);
 console.log(`There are ${onesInLayer} (1s) x ${twosInLayer} (2s) = ${onesInLayer * twosInLayer}`);
+
+const rendered = processor.render(layers);
+rendered.printToScreen();
