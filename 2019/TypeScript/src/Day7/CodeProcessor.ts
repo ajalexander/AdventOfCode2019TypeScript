@@ -1,4 +1,4 @@
-import { CommandLineIOManager, IOManager } from "./IOManager";
+import { IOManager } from "./IOManager";
 
 export enum HaltReason {
   outOfCommands,
@@ -20,7 +20,7 @@ export class ProgramState {
 export class CodeProcessor {
   private ioManager : IOManager;
 
-  constructor(ioManager: IOManager = new CommandLineIOManager()) {
+  constructor(ioManager: IOManager) {
     this.ioManager = ioManager;
   }
 

@@ -1,34 +1,53 @@
 import { CodeProcessor, ProgramState } from './CodeProcessor';
-import { AlternatingInputOutputIOManager } from './IOManager';
+import { ChainedIOManager } from './IOManager';
 
 export interface BestThrusterValues { 
   phaseSignals: number[];
   signal: number;
 }
 
+interface PhaseElements {
+  ioManager: ChainedIOManager;
+  processor: CodeProcessor;
+  state: ProgramState;
+}
+
 export class PhaseCalculator {
-  private ioManager: AlternatingInputOutputIOManager;
-  private codeProcessor: CodeProcessor;
+  private buildPhaseElements(steps: number, codeString: string) : PhaseElements[] {
+    const elements = [];
+    const ioManagers = [];
 
-  constructor() {
-    this.ioManager = new AlternatingInputOutputIOManager();
-    this.codeProcessor = new CodeProcessor(this.ioManager);
-  }
+    for (let index = 0; index < steps; index += 1) {
+      const ioManager = new ChainedIOManager(ioManagers[index - 1]);
+      const processor = new CodeProcessor(ioManager);
+      const state = new ProgramState(codeString.split(',').map(s => parseInt(s)));
+      const phaseElement : PhaseElements = {
+        ioManager: ioManager,
+        processor: processor,
+        state: state
+      };
 
-  setupPhases(values: number[]) {
-    values.forEach((phaseValue) => {
-      this.ioManager.addToInputBuffer(phaseValue);
-    });
+      elements.push(phaseElement);
+      ioManagers.push(ioManager);
+    }
+    return elements;
   }
 
   calculate(codeString: string, values: number[]) : number {
-    values.forEach((phaseValue) => {
-      const state = new ProgramState(codeString.split(',').map(s => parseInt(s)));
-      this.ioManager.addToInputBuffer(phaseValue);
-      this.codeProcessor.processCodes(state);
+    const phaseElements = this.buildPhaseElements(values.length, codeString);
+    phaseElements.forEach((phaseElement, index) => {
+      phaseElement.ioManager.addToInputBuffer(values[index]);
+      if (index === 0) {
+        phaseElement.ioManager.addToInputBuffer(0);
+      }
+    });
+
+    phaseElements.forEach((phaseElement) => {
+      phaseElement.processor.processCodes(phaseElement.state);
     });
     
-    return this.ioManager.outputBuffer[this.ioManager.outputBuffer.length - 1];
+    const finalOutput = phaseElements[values.length - 1].ioManager.outputBuffer;
+    return finalOutput[finalOutput.length - 1];
   }
 
   buildPossiblePhases() : number[][] {
@@ -71,7 +90,6 @@ export class PhaseCalculator {
     let bestValues: number[];
 
     possibleCombinations.forEach((phaseValues) => {
-      this.ioManager.reset();
       const score = this.calculate(codeString, phaseValues);
       if (score > bestScore) {
         bestScore = score;

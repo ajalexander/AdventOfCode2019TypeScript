@@ -1,7 +1,5 @@
-import * as readlineSync from 'readline-sync';
-
 export interface IOManager {
-  input() : number;
+  input() : number | undefined;
   output(value: number);
 }
 
@@ -25,52 +23,43 @@ export class InMemoryBufferIOManager implements IOManager {
 
   input() : number {
     const value = this.inputBuffer.shift();
-    console.log(`Returning ${value} as an input`);
+    // console.log(`Returning ${value} as an input`);
     return value;
   }
 
   output(value: number) {
-    console.log(`Storing ${value} as an output`);
+    // console.log(`Storing ${value} as an output`);
     this.outputBuffer.push(value);
   }
 }
 
-export class AlternatingInputOutputIOManager extends InMemoryBufferIOManager {
-  baseMode: boolean = true;
+export class ChainedIOManager extends InMemoryBufferIOManager {
+  feeder: ChainedIOManager;
 
-  reset() {
-    super.reset();
-    this.baseMode = true;
+  constructor(feeder: ChainedIOManager = null) {
+    super();
+    this.feeder = feeder;
+  }
+
+  hasAvailableOutput() {
+    return this.outputBuffer.length > 0;
+  }
+
+  takeOutput() : number {
+    return this.outputBuffer.shift();
   }
 
   input() : number {
-    let value : number;
-    
-    if (this.baseMode) {
-      value = super.input();
-    } else {
-      value = this.outputBuffer.shift() || 0;
-      console.log(`Returning ${value} as an input (from the output buffer)`);
+    if (this.inputBuffer.length > 0) {
+      return super.input();
     }
-    
-    this.baseMode = !this.baseMode;
 
-    return value;
-  }
-}
+    if (this.feeder.hasAvailableOutput()) {
+      const value = this.feeder.takeOutput();
+      // console.log(`Returning ${value} as an input (from the output buffer)`);
+      return value;
+    }
 
-export class CommandLineIOManager implements IOManager {
-  private standardInput = process.stdin;
-
-  constructor() {
-    this.standardInput.setEncoding('utf-8');
-  }
-
-  input() : number {
-    return readlineSync.questionInt('Input Value: ');
-  }
-
-  output(value: number) {
-    console.log(`Output Value: ${value}`);
+    return undefined;
   }
 }
