@@ -1,4 +1,4 @@
-import { CodeProcessor } from './CodeProcessor';
+import { CodeProcessor, ProgramState } from './CodeProcessor';
 import { AlternatingInputOutputIOManager } from './IOManager';
 
 export interface BestThrusterValues { 
@@ -23,8 +23,9 @@ export class PhaseCalculator {
 
   calculate(codeString: string, values: number[]) : number {
     values.forEach((phaseValue) => {
+      const state = new ProgramState(codeString.split(',').map(s => parseInt(s)));
       this.ioManager.addToInputBuffer(phaseValue);
-      this.codeProcessor.processCodeString(codeString);
+      this.codeProcessor.processCodes(state);
     });
     
     return this.ioManager.outputBuffer[this.ioManager.outputBuffer.length - 1];

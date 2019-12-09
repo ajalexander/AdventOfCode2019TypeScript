@@ -3,7 +3,7 @@ import 'mocha';
 
 import { PhaseCalculator } from './PhaseCalculator';
 
-describe('PhaseCalculator', () => {
+describe.only('PhaseCalculator', () => {
   let calculator;
 
   beforeEach(() => {

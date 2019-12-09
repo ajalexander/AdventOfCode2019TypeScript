@@ -1,5 +1,22 @@
 import { CommandLineIOManager, IOManager } from "./IOManager";
 
+export enum HaltReason {
+  outOfCommands,
+  terminated,
+  outOfInput
+}
+
+export class ProgramState {
+  opcodes: number[];
+  index: number;
+  haltReason?: HaltReason;
+
+  constructor(opcodes: number[]) {
+    this.opcodes = opcodes;
+    this.index = 0;
+  }
+}
+
 export class CodeProcessor {
   private ioManager : IOManager;
 
@@ -76,38 +93,34 @@ export class CodeProcessor {
     return parameters;
   }
 
-  processCodeString(codeString: string): string {
-    const codeArray = codeString.split(',').map(s => parseInt(s.trim()));
-    const processedArray = this.processCodes(codeArray);
-    return processedArray.map(i => i.toString()).join(',');
-  }
+  processCodes(state: ProgramState) : ProgramState {
+    for (let index = state.index; index < state.opcodes.length; ) {
+      state.index = index;
 
-  processCodes(opcodes: number[]) : number[] {
-    for (let index = 0; index < opcodes.length; ) {
-      const code = opcodes[index];
+      const code = state.opcodes[index];
       const commandCode = code % 100;
       const modeCodes = Math.floor(code / 100);
       let targetIndex: number;
       
       switch (commandCode){
         case 1:
-          this.processAddition(opcodes, this.getParameters(opcodes, index, 3, modeCodes));
+          this.processAddition(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
           index += 4;
           break;
         case 2:
-          this.processMultiplication(opcodes, this.getParameters(opcodes, index, 3, modeCodes));
+          this.processMultiplication(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
           index += 4;
           break;
         case 3:
-          this.processInput(opcodes, this.getParameters(opcodes, index, 1, modeCodes));
+          this.processInput(state.opcodes, this.getParameters(state.opcodes, index, 1, modeCodes));
           index += 2;
           break;
         case 4:
-          this.processOutput(this.getParameters(opcodes, index, 1, modeCodes, false));
+          this.processOutput(this.getParameters(state.opcodes, index, 1, modeCodes, false));
           index += 2;
           break;
         case 5:
-          targetIndex = this.processJumpIfTrue(this.getParameters(opcodes, index, 2, modeCodes, false));
+          targetIndex = this.processJumpIfTrue(this.getParameters(state.opcodes, index, 2, modeCodes, false));
           if (targetIndex !== undefined) {
             index = targetIndex;
           } else {
@@ -115,7 +128,7 @@ export class CodeProcessor {
           }
           break;
         case 6:
-          targetIndex = this.processJumpIfFalse(this.getParameters(opcodes, index, 2, modeCodes, false));
+          targetIndex = this.processJumpIfFalse(this.getParameters(state.opcodes, index, 2, modeCodes, false));
           if (targetIndex !== undefined) {
             index = targetIndex;
           } else {
@@ -123,21 +136,23 @@ export class CodeProcessor {
           }
           break;
         case 7:
-          this.processLessThan(opcodes, this.getParameters(opcodes, index, 3, modeCodes));
+          this.processLessThan(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
           index += 4;
           break;
         case 8:
-          this.processEquals(opcodes, this.getParameters(opcodes, index, 3, modeCodes));
+          this.processEquals(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
           index += 4;
           break;
         case 99:
-          return opcodes;
+          state.haltReason = HaltReason.terminated;
+          return state;
         default:
           index += 1;
            break;
       }
     }
     
-    return opcodes;
+    state.haltReason = HaltReason.outOfCommands;
+    return state;
   }
 }
