@@ -52,9 +52,13 @@ export class CodeProcessor {
     opcodes[parameters[2]] = parameters[0] === parameters[1] ? 1 : 0;
   }
 
-  private processInput(opcodes: number[], parameters: number[]) {
+  private processInput(opcodes: number[], parameters: number[]) : boolean {
     const input = this.ioManager.input();
-    opcodes[parameters[0]] = input;
+    if (input !== undefined) {
+      opcodes[parameters[0]] = input;
+      return true;
+    }
+    return false;
   }
 
   private processOutput(parameters: number[]) {
@@ -112,8 +116,12 @@ export class CodeProcessor {
           index += 4;
           break;
         case 3:
-          this.processInput(state.opcodes, this.getParameters(state.opcodes, index, 1, modeCodes));
-          index += 2;
+          if (this.processInput(state.opcodes, this.getParameters(state.opcodes, index, 1, modeCodes))) {
+            index += 2;
+          } else {
+            state.haltReason = HaltReason.outOfInput;
+            return state;
+          }
           break;
         case 4:
           this.processOutput(this.getParameters(state.opcodes, index, 1, modeCodes, false));
@@ -148,7 +156,7 @@ export class CodeProcessor {
           return state;
         default:
           index += 1;
-           break;
+          break;
       }
     }
     

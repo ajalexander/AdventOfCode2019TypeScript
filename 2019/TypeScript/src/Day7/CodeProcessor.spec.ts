@@ -4,7 +4,7 @@ import 'mocha';
 import { CodeProcessor, ProgramState } from './CodeProcessor';
 import { InMemoryBufferIOManager } from './IOManager';
 
-describe.only('CodeProcessor', () => {
+describe('CodeProcessor', () => {
   let processor;
   let ioManager : InMemoryBufferIOManager;
 

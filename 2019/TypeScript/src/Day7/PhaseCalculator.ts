@@ -1,4 +1,4 @@
-import { CodeProcessor, ProgramState } from './CodeProcessor';
+import { CodeProcessor, ProgramState, HaltReason } from './CodeProcessor';
 import { ChainedIOManager } from './IOManager';
 
 export interface BestThrusterValues { 
@@ -13,7 +13,7 @@ interface PhaseElements {
 }
 
 export class PhaseCalculator {
-  private buildPhaseElements(steps: number, codeString: string) : PhaseElements[] {
+  private buildPhaseElements(steps: number, codeString: string, feedbackMode: boolean) : PhaseElements[] {
     const elements = [];
     const ioManagers = [];
 
@@ -30,11 +30,16 @@ export class PhaseCalculator {
       elements.push(phaseElement);
       ioManagers.push(ioManager);
     }
+
+    if (feedbackMode) {
+      elements[0].ioManager.feeder = elements[steps - 1].ioManager;
+    }
+
     return elements;
   }
 
-  calculate(codeString: string, values: number[]) : number {
-    const phaseElements = this.buildPhaseElements(values.length, codeString);
+  calculate(codeString: string, values: number[], feedbackMode: boolean = false) : number {
+    const phaseElements = this.buildPhaseElements(values.length, codeString, feedbackMode);
     phaseElements.forEach((phaseElement, index) => {
       phaseElement.ioManager.addToInputBuffer(values[index]);
       if (index === 0) {
@@ -42,33 +47,45 @@ export class PhaseCalculator {
       }
     });
 
-    phaseElements.forEach((phaseElement) => {
-      phaseElement.processor.processCodes(phaseElement.state);
-    });
+    const allDone = (phaseElements: PhaseElements[]) => {
+      for (let index = 0; index < values.length; index += 1) {
+        if (phaseElements[0].state.haltReason !== HaltReason.terminated) {
+          return false;
+        }
+      }
+      return true;
+    }
+
+    while (!allDone(phaseElements)) {
+      phaseElements.forEach((phaseElement) => {
+        if (phaseElement.state.haltReason !== HaltReason.terminated) {
+          phaseElement.processor.processCodes(phaseElement.state);
+          }
+      });
+    }
     
     const finalOutput = phaseElements[values.length - 1].ioManager.outputBuffer;
     return finalOutput[finalOutput.length - 1];
   }
 
-  buildPossiblePhases() : number[][] {
+  private buildPossiblePhases(minimumValue = 0, maximumValue = 4) : number[][] {
     const possibleCombinations = [];
 
-    const maxValue = 4;
-    for (let i = 0; i <= maxValue; i += 1) {
-      for (let j = 0; j <= maxValue; j += 1) {
+    for (let i = minimumValue; i <= maximumValue; i += 1) {
+      for (let j = minimumValue; j <= maximumValue; j += 1) {
         if (i === j) {
           continue;
         }
-        for (let k = 0; k <= maxValue; k += 1) {
+        for (let k = minimumValue; k <= maximumValue; k += 1) {
           if (k === i || k === j) {
             continue;
           }
-          for (let l = 0; l <= maxValue; l += 1) {
+          for (let l = minimumValue; l <= maximumValue; l += 1) {
             if (l === i || l === j || l === k) {
               continue;
             }
 
-            for (let m = 0; m <= maxValue; m += 1) {
+            for (let m = minimumValue; m <= maximumValue; m += 1) {
               if (m === i || m === j || m === k || m === l) {
                 continue;
               }
@@ -83,14 +100,16 @@ export class PhaseCalculator {
     return possibleCombinations;
   }
 
-  findBestPhaseValues(codeString: string) : BestThrusterValues {
-    const possibleCombinations = this.buildPossiblePhases();
+  private findBestPhaseValuesForType(codeString: string, feedbackMode = false) : BestThrusterValues {
+    const possibleCombinations = feedbackMode
+      ? this.buildPossiblePhases(5, 9)
+      : this.buildPossiblePhases();
 
     let bestScore = -1;
     let bestValues: number[];
 
     possibleCombinations.forEach((phaseValues) => {
-      const score = this.calculate(codeString, phaseValues);
+      const score = this.calculate(codeString, phaseValues, feedbackMode);
       if (score > bestScore) {
         bestScore = score;
         bestValues = phaseValues;
@@ -101,5 +120,13 @@ export class PhaseCalculator {
       phaseSignals: bestValues,
       signal: bestScore,
     } as BestThrusterValues;
+  }
+
+  findBestPhaseValues(codeString: string) : BestThrusterValues {
+    return this.findBestPhaseValuesForType(codeString, false);
+  }
+
+  findBestPhaseValuesForFeedback(codeString: string) : BestThrusterValues {
+    return this.findBestPhaseValuesForType(codeString, true);
   }
 }

@@ -21,7 +21,7 @@ export class InMemoryBufferIOManager implements IOManager {
     this.inputBuffer.push(value);
   }
 
-  input() : number {
+  input() : number | undefined {
     const value = this.inputBuffer.shift();
     // console.log(`Returning ${value} as an input`);
     return value;
@@ -49,7 +49,7 @@ export class ChainedIOManager extends InMemoryBufferIOManager {
     return this.outputBuffer.shift();
   }
 
-  input() : number {
+  input() : number | undefined {
     if (this.inputBuffer.length > 0) {
       return super.input();
     }
