@@ -6,10 +6,14 @@ const codeString = '1102,34463338,34463338,63,1007,63,34463338,63,1005,63,53,110
 const ioManager = new InMemoryBufferIOManager();
 const processor = new CodeProcessor(ioManager);
 
-const state = ProgramState.fromString(codeString);
-
+let state = ProgramState.fromString(codeString);
 ioManager.addToInputBuffer(1);
-
 processor.processCodes(state);
+console.log(`Keycode for input 1: ${ioManager.outputBuffer}`);
 
-console.log(ioManager.outputBuffer);
+
+state = ProgramState.fromString(codeString);
+ioManager.reset();
+ioManager.addToInputBuffer(2);
+processor.processCodes(state);
+console.log(`Keycode for input 2: ${ioManager.outputBuffer}`);
