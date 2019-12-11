@@ -3,7 +3,7 @@ import 'mocha';
 
 import { FieldBuilder, Point } from './FieldBuilder';
 
-describe.only('Point', () => {
+describe('Point', () => {
   describe('constructor', () => {
     it('should set x and y', () => {
       const point = new Point(2, 3);
@@ -17,37 +17,50 @@ describe.only('Point', () => {
       const point = new Point(2, 2);
       const otherPoint = new Point(2, 1);
 
-      expect(point.degreesTo(otherPoint)).to.equal(90);
+      expect(point.degreesTo(otherPoint)).to.equal(0);
     });
 
     it('should handle straight down', () => {
       const point = new Point(2, 2);
       const otherPoint = new Point(2, 3);
 
-      expect(point.degreesTo(otherPoint)).to.equal(-90);
+      expect(point.degreesTo(otherPoint)).to.equal(180);
     });
 
     it('should handle straight left', () => {
       const point = new Point(2, 2);
-      const otherPoint = new Point(0, 2);
+      const otherPoint = new Point(1, 2);
 
-      expect(point.degreesTo(otherPoint)).to.equal(0);
+      expect(point.degreesTo(otherPoint)).to.equal(270);
     });
 
     it('should handle straight right', () => {
       const point = new Point(2, 2);
       const otherPoint = new Point(3, 2);
 
-      expect(point.degreesTo(otherPoint)).to.equal(180);
+      expect(point.degreesTo(otherPoint)).to.equal(90);
+    });
+
+    it('should handle angled distance', () => {
+      const point = new Point(2, 2);
+      const otherPointNE = new Point(3, 1);
+      const otherPointSE = new Point(3, 3);
+      const otherPointSW = new Point(1, 3);
+      const otherPointNW = new Point(1, 1);
+
+      expect(point.degreesTo(otherPointNE)).to.be.closeTo(45, 0.0001);
+      expect(point.degreesTo(otherPointSE)).to.be.closeTo(135, 0.0001);
+      expect(point.degreesTo(otherPointSW)).to.be.closeTo(225, 0.0001);
+      expect(point.degreesTo(otherPointNW)).to.be.closeTo(315, 0.0001);
     });
 
     it('should handle angled distance in line', () => {
       const point = new Point(2, 2);
-      const otherPoint1 = new Point(1, 1);
-      const otherPoint2 = new Point(0, 0);
+      const otherPoint1 = new Point(3, 3);
+      const otherPoint2 = new Point(4, 4);
 
-      expect(point.degreesTo(otherPoint1)).to.be.closeTo(45, 0.0001);
-      expect(point.degreesTo(otherPoint2)).to.be.closeTo(45, 0.0001);
+      expect(point.degreesTo(otherPoint1)).to.be.closeTo(135, 0.0001);
+      expect(point.degreesTo(otherPoint2)).to.be.closeTo(135, 0.0001);
     });
   });
 
@@ -99,7 +112,7 @@ describe.only('Point', () => {
   });
 });
 
-describe.only('FieldBuilder', () => {
+describe('FieldBuilder', () => {
   let builder: FieldBuilder;
 
   beforeEach(() => {
@@ -134,7 +147,8 @@ describe.only('FieldBuilder', () => {
         '....#',
         '...##',
       ];
-      const result = builder.bestPosition(map);
+      const field = builder.build(map);
+      const result = builder.bestPosition(field);
 
       expect(result.point.x).to.equal(3);
       expect(result.point.y).to.equal(4);
@@ -155,7 +169,8 @@ describe.only('FieldBuilder', () => {
         '##...#..#.',
         '.#....####',
       ];
-      const result = builder.bestPosition(map);
+      const field = builder.build(map);
+      const result = builder.bestPosition(field);
 
       expect(result.point.x).to.equal(5);
       expect(result.point.y).to.equal(8);

@@ -1,3 +1,8 @@
+export interface PointsOnLine {
+  degree: number;
+  points: Point[];
+}
+
 export class Point {
   x: number;
   y: number;
@@ -8,18 +13,26 @@ export class Point {
   }
 
   degreesTo(point: Point) : number {
-    // Calculate degrees from left
-    //        90
-    //        |
-    // 0 <---- ----> 180
-    //        |
-    //       -90
+    // Calculate degrees from top counting clockwise
+    //         0
+    //         |
+    // 270 <---- ----> 90
+    //         |
+    //        180
     const x = this.x - point.x;
     const y = this.y - point.y;
 
     const radians = Math.atan2(y, x);
-    const degrees = radians * 180 / Math.PI;
-    return degrees;
+    const baseDegrees = radians * 180 / Math.PI;
+
+    let rotatedDegrees = baseDegrees - 90;
+    if (rotatedDegrees < 0) {
+      rotatedDegrees += 360;
+    }
+
+    // console.log(`{${point.x},${point.y}}`, radians, baseDegrees, rotatedDegrees);
+
+    return rotatedDegrees;
   }
 
   distanceBetween(other: Point) : number {
@@ -29,23 +42,38 @@ export class Point {
   visiblePoints(points: Point[]) : Point[] {
     const visiblePoints = [];
 
+    const grouped = this.pointsByDegree(points);
+    grouped.forEach((item) => {
+      visiblePoints.push(item.points[0]);
+
+    });
+
+    return visiblePoints;
+  }
+
+  pointsByDegree(points: Point[]) : PointsOnLine[] {
     const otherPoints = points.filter(p => p !== this);
     const grouped = otherPoints.reduce((mapByDegree, otherPoint) => {
       const degrees = this.degreesTo(otherPoint);
-      mapByDegree[degrees] = (mapByDegree[degrees] || [])
-      mapByDegree[degrees].push(otherPoint);
+      let degreeItem = mapByDegree.find(x => x.degree === degrees);
+      if (!degreeItem) {
+        degreeItem = {
+          degree: degrees,
+          points: []
+        };
+        mapByDegree.push(degreeItem);
+      }
+      degreeItem.points.push(otherPoint);
 
       return mapByDegree;
-    }, {})
+    }, [] as PointsOnLine[])
     
-    for (let degree in grouped) {
-      const pointsOnLine : Point[] = grouped[degree];
-      const sorted = pointsOnLine.sort((a, b) => this.distanceBetween(a) - this.distanceBetween(b));
+    const sorted = grouped.sort((a, b) => a.degree - b.degree);
+    sorted.forEach((item) => {
+      item.points = item.points.sort((a,b) => this.distanceBetween(a) - this.distanceBetween(b));
+    });
 
-      visiblePoints.push(sorted[0]);
-    }
-
-    return visiblePoints;
+    return grouped;
   }
 }
 
@@ -87,8 +115,7 @@ export class FieldBuilder {
     } as Field;
   }
 
-  bestPosition(map: string[]) : BestMatch {
-    const field = this.build(map);
+  bestPosition(field : Field) : BestMatch {
     const sortedByVisibility = field.allPoints.sort((a, b) =>
       a.visiblePoints(field.allPoints).length -
       b.visiblePoints(field.allPoints).length);
