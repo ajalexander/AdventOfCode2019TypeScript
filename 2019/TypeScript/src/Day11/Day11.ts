@@ -1,10 +1,23 @@
-import { PaintingManager, ProgramBuilder, Robot } from './PaintingRobot';
+import { Color, FieldPainter, PaintingManager, ProgramBuilder, Robot } from './PaintingRobot';
 
-const state = ProgramBuilder.buildProgram();
-const robot = new Robot();
+let state = ProgramBuilder.buildProgram();
+let robot = new Robot();
 
-const manager = new PaintingManager(robot, state);
+let manager = new PaintingManager(robot, state);
 manager.runUntilDone();
 
-console.log(`There were ${robot.map.paintedPoints().length} painted tiles`);
+console.log(`There were ${robot.map.paintedPoints().length} painted tiles when started on black`);
 
+
+
+state = ProgramBuilder.buildProgram();
+robot = new Robot();
+robot.currentPoint.color = Color.white;
+
+manager = new PaintingManager(robot, state);
+manager.runUntilDone();
+
+console.log(`There were ${robot.map.paintedPoints().length} painted tiles when started on black`);
+
+const painter = new FieldPainter();
+painter.print(robot);

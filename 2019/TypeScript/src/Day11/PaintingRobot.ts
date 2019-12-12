@@ -200,3 +200,60 @@ export class ProgramBuilder {
     return ProgramState.fromString(program);
   }
 }
+
+
+export class FieldPainter {
+  private pointToCharacter(point: Point, robot: Robot): string {
+    if (point === undefined) {
+      return ' ';
+    }
+    if (point === robot.currentPoint) {
+      switch (robot.currentDirection) {
+        case Direction.up:
+          return '^';
+        case Direction.right:
+          return '>';
+        case Direction.down:
+          return 'V';
+        case Direction.left:
+          return '<';
+      }
+    } else if (point.color === Color.white) {
+      return '#';
+    } else {
+      return ' ';
+    }
+  }
+
+  renderLines(robot: Robot) : string[] {
+    const paintedLines : string[] = [];
+
+    const xValues = robot.map.points.map(p => p.x).sort((a,b) => a - b);
+    const yValues = robot.map.points.map(p => p.y).sort((a,b) => a - b);
+
+    const minX = xValues[0];
+    const maxX = xValues.reverse()[0];
+
+    const minY = yValues[0];
+    const maxY = yValues.reverse()[0];
+
+    const yShift = 0 - minY;
+
+    for (let y = minY; y <= maxY; y += 1) {
+      paintedLines[y + yShift] = '';
+      for (let x = minX; x <= maxX; x += 1) {
+        const point = robot.map.pointAt(x, y, false);
+        const character = this.pointToCharacter(point, robot);
+        paintedLines[y + yShift] += character;
+      }
+    }
+
+    return paintedLines;
+  }
+
+  print(robot: Robot) {
+    this.renderLines(robot).forEach((line) => {
+      console.log(line);
+    });
+  }
+}
