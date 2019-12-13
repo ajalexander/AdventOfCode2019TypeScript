@@ -39,21 +39,17 @@ export class Velocity {
 
 export class Moon {
   position: Position;
-  initialPosition: Position;
   velocity: Velocity;
 
   constructor(initialPosition: Position, initialVelocity = new Velocity(0, 0, 0)) {
     this.position = initialPosition;
-    this.initialPosition = initialPosition;
     this.velocity = initialVelocity;
   }
 
   move() {
-    const newPosition = new Position(
-      this.position.x + this.velocity.x,
-      this.position.y + this.velocity.y,
-      this.position.z + this.velocity.z);
-    this.position = newPosition;
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+    this.position.z += this.velocity.z;
   }
 
   potentialEnergy() : number {
@@ -66,10 +62,6 @@ export class Moon {
 
   totalEnergy() : number {
     return this.potentialEnergy() * this.kineticEnergy();
-  }
-
-  backAtHome() : boolean {
-    return this.position.equals(this.initialPosition);
   }
 }
 
@@ -95,10 +87,6 @@ export class System {
       acc += moon.totalEnergy();
       return acc;
     }, 0);
-  }
-
-  allAtHome() : boolean {
-    return this.moons.every(moon => moon.backAtHome());
   }
 }
 
@@ -160,15 +148,27 @@ export class SystemModeler {
 
   waitUntilAlignment(maximumAttemptCount : number = Number.POSITIVE_INFINITY) : number {
     let counter = 0;
-    while(counter < maximumAttemptCount) {
+    let xCycle : number;
+    let yCycle : number;
+    let zCycle : number;
+    while(counter < maximumAttemptCount && (!xCycle || !yCycle || !zCycle)) {
       counter += 1;
       this.adjustAndMove();
-      if (this.system.allAtHome()) {
-        return counter + 1;
+
+      if (this.system.moons.every(moon => moon.velocity.x === 0)) {
+        xCycle = counter;
       }
-      if (counter % 100000 === 0) {
-        console.log(`Still running. Currently tried ${counter / 1000}k steps.`);
+      if (this.system.moons.every(moon => moon.velocity.y === 0)) {
+        yCycle = counter;
+      }
+      if (this.system.moons.every(moon => moon.velocity.z === 0)) {
+        zCycle = counter;
       }
     }
+
+    const greatestCommonDemoninator = (a, b) => !b ? a : greatestCommonDemoninator(b, a % b);
+    const leastCommonMultiple = (a, b) => (a * b) / greatestCommonDemoninator(a, b);
+
+    return [xCycle, yCycle, zCycle].reduce(leastCommonMultiple) * 2;
   }
 }
