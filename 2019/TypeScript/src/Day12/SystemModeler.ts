@@ -8,6 +8,16 @@ export class Position {
     this.y = y;
     this.z = z;
   }
+
+  equals(other: Position) {
+    return this.x === other.x
+      && this.y === other.y
+      && this.z === other.z;
+  }
+
+  toString() {
+    return `{${this.x},${this.y},${this.z}}`;
+  }
 }
 export class Velocity {
   x: number;
@@ -29,17 +39,21 @@ export class Velocity {
 
 export class Moon {
   position: Position;
+  initialPosition: Position;
   velocity: Velocity;
 
   constructor(initialPosition: Position, initialVelocity = new Velocity(0, 0, 0)) {
     this.position = initialPosition;
+    this.initialPosition = initialPosition;
     this.velocity = initialVelocity;
   }
 
   move() {
-    this.position.x += this.velocity.x;
-    this.position.y += this.velocity.y;
-    this.position.z += this.velocity.z;
+    const newPosition = new Position(
+      this.position.x + this.velocity.x,
+      this.position.y + this.velocity.y,
+      this.position.z + this.velocity.z);
+    this.position = newPosition;
   }
 
   potentialEnergy() : number {
@@ -52,6 +66,10 @@ export class Moon {
 
   totalEnergy() : number {
     return this.potentialEnergy() * this.kineticEnergy();
+  }
+
+  backAtHome() : boolean {
+    return this.position.equals(this.initialPosition);
   }
 }
 
@@ -77,6 +95,10 @@ export class System {
       acc += moon.totalEnergy();
       return acc;
     }, 0);
+  }
+
+  allAtHome() : boolean {
+    return this.moons.every(moon => moon.backAtHome());
   }
 }
 
@@ -133,6 +155,20 @@ export class SystemModeler {
     for (let counter = 0; counter < timesToRun; counter += 1) {
       this.adjustVelocities();
       this.move();
+    }
+  }
+
+  waitUntilAlignment(maximumAttemptCount : number = Number.POSITIVE_INFINITY) : number {
+    let counter = 0;
+    while(counter < maximumAttemptCount) {
+      counter += 1;
+      this.adjustAndMove();
+      if (this.system.allAtHome()) {
+        return counter + 1;
+      }
+      if (counter % 100000 === 0) {
+        console.log(`Still running. Currently tried ${counter / 1000}k steps.`);
+      }
     }
   }
 }

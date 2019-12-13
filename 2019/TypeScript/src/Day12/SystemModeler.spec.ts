@@ -52,7 +52,7 @@ describe('Moon', () => {
 
   describe('totalEnergy', () => {
     it('should return product of potential and kinetic', () => {
-      moon.position = new Velocity(1, 2, 3);
+      moon.position = new Position(1, 2, 3);
       moon.velocity = new Velocity(-2, -3, -5);
 
       expect(moon.totalEnergy()).to.equal(60);
@@ -163,6 +163,30 @@ describe('System', () => {
 
       // Not technically related to adjustAndMove but a convenient place to test
       expect(system.totalEnergy()).to.equal(179);
+    });
+  });
+
+  describe('waitUntilAlignment', () => {
+    it('should work for example 1', () => {
+      system.moons.push(new Moon(new Position(-1, 0, 2)));
+      system.moons.push(new Moon(new Position(2, -10, -7)));
+      system.moons.push(new Moon(new Position(4, -8, 8)));
+      system.moons.push(new Moon(new Position(3, 5, -1)));
+
+      const steps = modeler.waitUntilAlignment(3000);
+
+      expect(steps).to.equal(2772);
+    });
+
+    it.skip('should work for example 2', () => {
+      system.moons.push(new Moon(new Position(-8, -10, 0)));
+      system.moons.push(new Moon(new Position(5, 5, 10)));
+      system.moons.push(new Moon(new Position(2, -7, 3)));
+      system.moons.push(new Moon(new Position(9, -8, -3)));
+
+      const steps = modeler.waitUntilAlignment();
+
+      expect(steps).to.equal(4686774924);
     });
   });
 });
