@@ -1,3 +1,5 @@
+import * as readlineSync from 'readline-sync';
+
 export interface IOManager {
   input() : number | undefined;
   output(value: number);
@@ -6,6 +8,9 @@ export interface IOManager {
 export class InMemoryBufferIOManager implements IOManager {
   inputBuffer : number[];
   outputBuffer : number[];
+
+  inputRecievedCallback : (value: number) => void;
+  outputProvidedCallback : (value: number) => void;
 
   constructor() {
     this.inputBuffer = [];
@@ -50,16 +55,31 @@ export class ChainedIOManager extends InMemoryBufferIOManager {
   }
 
   input() : number | undefined {
+    let value: number = undefined;
+
     if (this.inputBuffer.length > 0) {
-      return super.input();
-    }
-
-    if (this.feeder.hasAvailableOutput()) {
-      const value = this.feeder.takeOutput();
+      value = super.input();
+    } else if (this.feeder.hasAvailableOutput()) {
+      value = this.feeder.takeOutput();
       // console.log(`Returning ${value} as an input (from the output buffer)`);
-      return value;
     }
 
-    return undefined;
+    return value;
+  }
+}
+
+export class CommandLineIOManager implements IOManager {
+  private standardInput = process.stdin;
+
+  constructor() {
+    this.standardInput.setEncoding('utf-8');
+  }
+
+  input() : number {
+    return readlineSync.questionInt('Input Value: ');
+  }
+
+  output(value: number) {
+    console.log(`Output Value: ${value}`);
   }
 }

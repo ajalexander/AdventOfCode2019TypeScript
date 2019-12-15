@@ -1,4 +1,4 @@
-import { IOManager } from "./IOManager";
+import { InMemoryBufferIOManager, IOManager } from "./IOManager";
 
 export enum HaltReason {
   outOfCommands,
@@ -6,34 +6,66 @@ export enum HaltReason {
   outOfInput
 }
 
+enum ParameterMode {
+  position,
+  immediate,
+  relative
+}
+
 export class ProgramState {
   opcodes: number[];
   index: number;
+  relativeBase: number;
   haltReason?: HaltReason;
 
   constructor(opcodes: number[]) {
     this.opcodes = opcodes;
     this.index = 0;
+    this.relativeBase = 0;
+  }
+
+  static fromString(codeString: string) : ProgramState {
+    return new ProgramState(codeString.split(',').map(s => parseInt(s)));
   }
 }
 
 export class CodeProcessor {
   private ioManager : IOManager;
 
-  constructor(ioManager: IOManager) {
+  constructor(ioManager: IOManager = new InMemoryBufferIOManager()) {
     this.ioManager = ioManager;
   }
 
+  private ensureFilledThroughIndex(opcodes: number[], index: number) {
+    if (index >= opcodes.length) {
+      for (let i = opcodes.length; i <= index; i += 1) {
+        opcodes[i] = 0;
+      }
+    }
+  }
+
   private getValue(opcodes: number[], index: number) {
+    if (index > opcodes.length) {
+      return 0;
+    }
+    // this.ensureFilledThroughIndex(opcodes, index);
     return opcodes[index];
   }
 
-  private isImmediateParameter(offset: number, modeCodes: number) {
+  private parameterMode(offset: number, modeCodes: number) {
     while (offset > 0) {
       modeCodes = Math.floor(modeCodes / 10);
       offset -= 1;
     }
-    return modeCodes % 10 === 1;
+    const modeCode = modeCodes % 10;
+    switch (modeCode) {
+      case 2:
+        return ParameterMode.relative;
+      case 1:
+        return ParameterMode.immediate;
+      default:
+        return ParameterMode.position;
+    }
   }
 
   private processAddition(opcodes: number[], parameters: number[]) {
@@ -80,18 +112,39 @@ export class CodeProcessor {
     return parameters[1];
   }
 
-  private getParameters(opcodes: number[], operationIndex: number, parameterCount: number, modeCodes: number, forceLastParameterMode = true) {
+  private processRelativeBaseAdjustment(state: ProgramState, parameters: number[]) {
+    state.relativeBase += parameters[0];
+  }
+
+  private getParameters(state: ProgramState, operationIndex: number, parameterCount: number, modeCodes: number, lastValueIsTargetParameter = true) {
     const parameters = [];
 
     for (let index = 0; index < parameterCount; index += 1) {
-      const isImmediateParameter = this.isImmediateParameter(index, modeCodes);
+      let parameterMode = this.parameterMode(index, modeCodes);
       const isLastParameter = index === (parameterCount - 1)
-      const positionValue = opcodes[operationIndex + index + 1];
-      
-      if (isImmediateParameter || (forceLastParameterMode && isLastParameter)) {
-        parameters.push(positionValue);
-      } else {
-        parameters.push(this.getValue(opcodes, positionValue))
+      const positionIndex = operationIndex + index + 1;
+      const positionValue = state.opcodes[positionIndex];
+
+      // A target parameter cannot use immediate mode
+      if (lastValueIsTargetParameter && isLastParameter) {
+        if (parameterMode === ParameterMode.relative) {
+          parameters.push(positionValue + state.relativeBase);
+        } else {
+          parameters.push(positionValue);
+        }
+      }
+      else {
+        switch(parameterMode) {
+          case ParameterMode.relative:
+            parameters.push(this.getValue(state.opcodes, positionValue + state.relativeBase));
+            break;
+          case ParameterMode.immediate:
+            parameters.push(positionValue);
+            break;
+          case ParameterMode.position:
+            parameters.push(this.getValue(state.opcodes, positionValue));
+            break;
+        }
       }
     }
     return parameters;
@@ -108,15 +161,15 @@ export class CodeProcessor {
       
       switch (commandCode){
         case 1:
-          this.processAddition(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
+          this.processAddition(state.opcodes, this.getParameters(state, index, 3, modeCodes));
           index += 4;
           break;
         case 2:
-          this.processMultiplication(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
+          this.processMultiplication(state.opcodes, this.getParameters(state, index, 3, modeCodes));
           index += 4;
           break;
         case 3:
-          if (this.processInput(state.opcodes, this.getParameters(state.opcodes, index, 1, modeCodes))) {
+          if (this.processInput(state.opcodes, this.getParameters(state, index, 1, modeCodes))) {
             index += 2;
           } else {
             state.haltReason = HaltReason.outOfInput;
@@ -124,11 +177,11 @@ export class CodeProcessor {
           }
           break;
         case 4:
-          this.processOutput(this.getParameters(state.opcodes, index, 1, modeCodes, false));
+          this.processOutput(this.getParameters(state, index, 1, modeCodes, false));
           index += 2;
           break;
         case 5:
-          targetIndex = this.processJumpIfTrue(this.getParameters(state.opcodes, index, 2, modeCodes, false));
+          targetIndex = this.processJumpIfTrue(this.getParameters(state, index, 2, modeCodes, false));
           if (targetIndex !== undefined) {
             index = targetIndex;
           } else {
@@ -136,7 +189,7 @@ export class CodeProcessor {
           }
           break;
         case 6:
-          targetIndex = this.processJumpIfFalse(this.getParameters(state.opcodes, index, 2, modeCodes, false));
+          targetIndex = this.processJumpIfFalse(this.getParameters(state, index, 2, modeCodes, false));
           if (targetIndex !== undefined) {
             index = targetIndex;
           } else {
@@ -144,12 +197,16 @@ export class CodeProcessor {
           }
           break;
         case 7:
-          this.processLessThan(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
+          this.processLessThan(state.opcodes, this.getParameters(state, index, 3, modeCodes));
           index += 4;
           break;
         case 8:
-          this.processEquals(state.opcodes, this.getParameters(state.opcodes, index, 3, modeCodes));
+          this.processEquals(state.opcodes, this.getParameters(state, index, 3, modeCodes));
           index += 4;
+          break;
+        case 9:
+          this.processRelativeBaseAdjustment(state, this.getParameters(state, index, 1, modeCodes, false));
+          index += 2;
           break;
         case 99:
           state.haltReason = HaltReason.terminated;

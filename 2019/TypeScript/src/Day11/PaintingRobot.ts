@@ -1,5 +1,5 @@
-import { InMemoryBufferIOManager } from "./IOManager";
-import { CodeProcessor, ProgramState, HaltReason } from './CodeProcessor';
+import { InMemoryBufferIOManager } from "../Common/IOManager";
+import { CodeProcessor, ProgramState, HaltReason } from '../Common/CodeProcessor';
 
 export enum NextOperation {
   paint,

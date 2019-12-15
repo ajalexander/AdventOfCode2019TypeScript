@@ -1,5 +1,5 @@
-import { CodeProcessor, ProgramState, HaltReason } from './CodeProcessor';
-import { ChainedIOManager } from './IOManager';
+import { CodeProcessor, ProgramState, HaltReason } from '../Common/CodeProcessor';
+import { ChainedIOManager } from '../Common/IOManager';
 
 export interface BestThrusterValues { 
   phaseSignals: number[];
