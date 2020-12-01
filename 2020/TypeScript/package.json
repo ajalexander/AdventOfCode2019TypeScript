@@ -1,0 +1,17 @@
+{
+  "name": "advent_of_code_2020",
+  "version": "1.0.0",
+  "description": "Code solutions for Advent of Code 2020",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint . --ext .ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Aaron Alexander",
+  "license": "MIT",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.9.0",
+    "@typescript-eslint/parser": "^4.9.0",
+    "eslint": "^7.14.0"
+  }
+}
