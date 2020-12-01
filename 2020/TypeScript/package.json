@@ -4,6 +4,7 @@
   "description": "Code solutions for Advent of Code 2020",
   "main": "index.js",
   "scripts": {
+    "build": "tsc -p .",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -12,6 +13,7 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^4.9.0",
     "@typescript-eslint/parser": "^4.9.0",
-    "eslint": "^7.14.0"
+    "eslint": "^7.14.0",
+    "typescript": "^4.1.2"
   }
 }
