@@ -4,42 +4,52 @@ import { problemInputs } from './data';
 const input = problemInputs;
 
 export class Solution extends DayChallenge {
-  private isPasswordValid(dataRow: string) {
+  private static parseEntry(dataRow: string) {
+
     const expression = /(\d+)-(\d+) (\w): (.*)+/;
     const result = dataRow.match(expression);
 
-    const minimumOccurrences = parseInt(result[1]);
-    const maximumOccurrences = parseInt(result[2]);
+    const lowNumber = parseInt(result[1]);
+    const highNumber = parseInt(result[2]);
     const targetCharacter = result[3];
     const password = result[4];
 
-    const occurrences = password.split(targetCharacter).length - 1;
-
-    // console.log(minimumOccurrences, maximumOccurrences, targetCharacter, password, occurrences);
-
-    return (occurrences >= minimumOccurrences) && (occurrences <= maximumOccurrences);
+    return {
+      lowNumber,
+      highNumber,
+      targetCharacter,
+      password,
+    }
   }
 
-  private findValidPasswordIndices(data: string[]) : number[] {
-    const indices: number[] = [];
+  private static isPasswordValidForFirstRuleset(dataRow: string) {
+    const parsed = Solution.parseEntry(dataRow);
 
-    data.forEach((dataRow, index) => {
-      if (this.isPasswordValid(dataRow)) {
-        indices.push(index);
-      }
-    });
+    const occurrences = parsed.password.split(parsed.targetCharacter).length - 1;
 
-    return indices;
+    return (occurrences >= parsed.lowNumber) && (occurrences <= parsed.highNumber);
+  }
+
+  private static isPasswordValidForSecondRuleset(dataRow: string) {
+    const parsed = Solution.parseEntry(dataRow);
+
+    const firstMatch = parsed.password[parsed.lowNumber - 1] === parsed.targetCharacter;
+    const secondMatch = parsed.password[parsed.highNumber - 1] === parsed.targetCharacter;
+
+    return (firstMatch && !secondMatch) || (!firstMatch && secondMatch);
   }
 
   dayNumber(): number {
     return 1;
   }
+
   partOne(): void {
-    const validPasswordIndices = this.findValidPasswordIndices(input);
-    console.log(`There are ${validPasswordIndices.length} valid passwords`);
+    const validPasswords = input.map(Solution.isPasswordValidForFirstRuleset).filter(Boolean).length;
+    console.log(`There are ${validPasswords} valid passwords`);
   }
 
   partTwo(): void {
+    const validPasswords = input.map(Solution.isPasswordValidForSecondRuleset).filter(Boolean).length;
+    console.log(`There are ${validPasswords} valid passwords`);
   }
 }
