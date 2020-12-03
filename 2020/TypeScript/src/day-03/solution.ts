@@ -8,9 +8,6 @@ interface Position {
   y: number;
 }
 
-const rightMovement = 3;
-const downMovement = 1;
-
 class Map {
   private rows: string[][] = [];
 
@@ -69,14 +66,14 @@ export class Solution extends DayChallenge {
     return map.height() == (position.y + 1);
   }
 
-  private treesEncountered() {
+  private treesEncountered(rightMovement: number, downMovement: number) {
     const map = new Map(input.slice());
     const currentPosition = {
       x: 0,
       y: 0
     } as Position;
     let encounteredTrees = 0;
-    let stepCount = 0;
+    // let stepCount = 0;
 
     while (!this.atBottomOfRun(map, currentPosition)) {
       map.ensureWidth(currentPosition.x + rightMovement + 1);
@@ -87,14 +84,16 @@ export class Solution extends DayChallenge {
         encounteredTrees += 1;
       }
 
-      stepCount += 1;
-      console.log(`After step ${stepCount}`);
-      map.print();
-      console.log();
-      console.log();
+      // stepCount += 1;
+      // console.log(`After step ${stepCount}`);
+      // map.print();
+      // console.log();
+      // console.log();
     }
 
-    map.print();
+    // map.print();
+
+    console.log(`When moving right ${rightMovement} and down ${downMovement}, ${encounteredTrees} trees will be encountered`);
 
     return encounteredTrees;
   }
@@ -104,11 +103,17 @@ export class Solution extends DayChallenge {
   }
 
   partOne(): void {
-    const encounteredTrees = this.treesEncountered();
-    console.log(`Encountered ${encounteredTrees} trees along the way`)
+    this.treesEncountered(3, 1);
   }
 
   partTwo(): void {
-
+    const product = 1
+      * this.treesEncountered(1, 1)
+      * this.treesEncountered(3, 1)
+      * this.treesEncountered(5, 1)
+      * this.treesEncountered(7, 1)
+      * this.treesEncountered(1, 2);
+    
+    console.log(`The product of all the trees encountered is ${product}`);
   }
 }
