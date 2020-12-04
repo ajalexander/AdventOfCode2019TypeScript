@@ -47,10 +47,6 @@ export class Solution extends DayChallenge {
     return parsedData;
   }
 
-  private static hasRequiredFields(fields : PassportFields) {
-    return !!fields.byr && !!fields.iyr && !!fields.eyr && !!fields.hgt && !!fields.hcl && !!fields.ecl && !!fields.pid;
-  }
-
   private static validByr(input: string) {
     if (!input.match(/^\d{4}$/)) {
       return false;
@@ -104,18 +100,23 @@ export class Solution extends DayChallenge {
     return !!input.match(/^\d{9}$/)
   }
 
+  private static validationRules = {
+    byr: Solution.validByr,
+    iyr: Solution.validIyr,
+    eyr: Solution.validEyr,
+    hgt: Solution.validHgt,
+    hcl: Solution.validHcl,
+    ecl: Solution.validEcl,
+    pid: Solution.validPid,
+  };
+
+  private static hasRequiredFields(fields : PassportFields) {
+    return Object.keys(Solution.validationRules).every(key => !!fields[key]);
+  }
+
   private static validPassport(fields : PassportFields) {
-    if (!Solution.hasRequiredFields(fields)) {
-      return false;
-    }
     return Solution.hasRequiredFields(fields)
-      && Solution.validByr(fields.byr)
-      && Solution.validIyr(fields.iyr)
-      && Solution.validEyr(fields.eyr)
-      && Solution.validHgt(fields.hgt)
-      && Solution.validHcl(fields.hcl)
-      && Solution.validEcl(fields.ecl)
-      && Solution.validPid(fields.pid);
+      && Object.keys(Solution.validationRules).every(key => Solution.validationRules[key](fields[key]));
   }
 
   constructor() {
