@@ -27,6 +27,7 @@ export class Solution extends DayChallenge {
   dayNumber(): number {
     return 1;
   }
+
   partOne(): void {
     this.solve(2);
   }

@@ -126,7 +126,7 @@ export class Solution extends DayChallenge {
   }
 
   dayNumber(): number {
-    return 3;
+    return 4;
   }
 
   partOne(): void {

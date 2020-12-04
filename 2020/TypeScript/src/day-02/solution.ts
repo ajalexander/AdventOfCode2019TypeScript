@@ -40,7 +40,7 @@ export class Solution extends DayChallenge {
   }
 
   dayNumber(): number {
-    return 1;
+    return 2;
   }
 
   partOne(): void {
