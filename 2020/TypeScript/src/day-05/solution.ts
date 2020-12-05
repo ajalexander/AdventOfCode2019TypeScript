@@ -84,5 +84,14 @@ export class Solution extends DayChallenge {
   }
 
   partTwo(): void {
+    const parsedTickets = this.lines.map(Solution.parseTicket);
+    const seatIds = parsedTickets.map(ticket => ticket.seatId).sort();
+    const smallestSeatId = parsedTickets.reduce((a, b) => a.seatId < b.seatId ? a : b).seatId;
+    const largestSeatId = parsedTickets.reduce((a, b) => a.seatId > b.seatId ? a : b).seatId;
+
+    const possibleSeats = Array.from({ length: largestSeatId - smallestSeatId }, (_, k) => k + smallestSeatId);
+    const missingSeat = possibleSeats.filter(seatId => !seatIds.includes(seatId))[0];
+
+    console.log(`The missing seat ID is ${missingSeat}`);
   }
 }
