@@ -17,22 +17,7 @@ interface PassportFields {
 }
 
 export class Solution extends DayChallenge {
-  private lines: string[];
-
-  private splitIntoGroups() {
-    const groups = [];
-    groups.push([]);
-
-    this.lines.forEach(line => {
-      if (line.match(/^\s*$/)) {
-        groups.push([]);
-      } else {
-        groups[groups.length - 1].push(line);
-      }
-    });
-
-    return groups;
-  }
+  private groups: string[][];
 
   private parsePassportData(data: string[]) {
     const parsedData = {} as PassportFields;
@@ -122,7 +107,7 @@ export class Solution extends DayChallenge {
   constructor() {
     super();
     const reader = new FileReader();
-    this.lines = reader.readFile(inputPath);
+    this.groups = reader.readFileIntoLineGroups(inputPath);
   }
 
   dayNumber(): number {
@@ -130,14 +115,14 @@ export class Solution extends DayChallenge {
   }
 
   partOne(): void {
-    const passportData = this.splitIntoGroups().map(this.parsePassportData);
+    const passportData = this.groups.map(this.parsePassportData);
     const validPassports = passportData.filter(Solution.hasRequiredFields);
 
     console.log(`Of the ${passportData.length} passports evaluated, ${validPassports.length} have the required fields`);
   }
 
   partTwo(): void {
-    const passportData = this.splitIntoGroups().map(this.parsePassportData);
+    const passportData = this.groups.map(this.parsePassportData);
     const validPassports = passportData.filter(Solution.validPassport);
 
     console.log(`Of the ${passportData.length} passports evaluated, ${validPassports.length} are valid`);
