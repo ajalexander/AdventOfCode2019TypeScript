@@ -18,6 +18,19 @@ export class Solution extends DayChallenge {
     return Solution.uniqueAnswers(combinedAnsweres);
   }
 
+  private static commonQuestionsForGroup(groupAnswers: string[]) {
+    let commonQuestions: string[];
+    groupAnswers.forEach(individualAnswers => {
+      const answersCollection = individualAnswers.split('');
+      if (commonQuestions) {
+        commonQuestions = commonQuestions.filter(value => answersCollection.includes(value));
+      } else {
+        commonQuestions = answersCollection;
+      }
+    });
+    return commonQuestions.sort();
+  }
+
   constructor() {
     super();
     const reader = new FileReader();
@@ -32,9 +45,13 @@ export class Solution extends DayChallenge {
     const questionsAnswered = this.groups.reduce((acc, groupAnswers) => {
       return acc + Solution.questionsForGroup(groupAnswers).length;
     }, 0);
-    console.log(`There are ${questionsAnswered} unique questions answered`);
+    console.log(`There are ${questionsAnswered} questions answered by anyone in group`);
   }
 
   partTwo(): void {
+    const questionsAnswered = this.groups.reduce((acc, groupAnswers) => {
+      return acc + Solution.commonQuestionsForGroup(groupAnswers).length;
+    }, 0);
+    console.log(`There are ${questionsAnswered} questions answered by everyone in group`);
   }
 }
