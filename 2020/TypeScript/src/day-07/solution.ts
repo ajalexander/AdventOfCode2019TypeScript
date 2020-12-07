@@ -4,20 +4,41 @@ import { FileReader } from '../common/fileUtils';
 // const inputPath = './src/day-07/example.txt';
 const inputPath = './src/day-07/problemInput.txt';
 
-class BagDefinition {
+interface ParsedContentItem {
+  quantity: number;
   color: string;
-  contains: Set<BagDefinition>;
+}
+
+interface ContentItem {
+  quantity: number;
+  item: BagDefinition;
+}
+
+class BagDefinition {
+  private containedDefinitions: Set<BagDefinition>;
+
+  color: string;
+  contains: ContentItem[];
   containedBy: Set<BagDefinition>;
 
   constructor(color: string) {
     this.color = color;
-    this.contains = new Set();
+    this.containedDefinitions = new Set();
+    this.contains = [];
     this.containedBy = new Set();
   }
 
-  addContent(content: BagDefinition) {
-    this.contains.add(content);
-    content.containedBy.add(this);
+  addContent(quantity: number, item: BagDefinition) {
+    this.containedDefinitions.add(item);
+    this.contains.push({
+      quantity: quantity,
+      item: item
+    });
+    item.containedBy.add(this);
+  }
+
+  countContainedBags() : number {
+    return this.contains.reduce((acc, item) => acc + item.quantity + item.quantity * item.item.countContainedBags(), 0);
   }
 }
 
@@ -28,16 +49,21 @@ interface BagMap {
 export class Solution extends DayChallenge {
   private lines: string[];
 
-  private static parseContents(contents: string) : string[] {
+  private static parseContents(contents: string) : ParsedContentItem[] {
     const contentsRegex = /^(\d+) ([^,]+) bag(s?)$/;
 
     return contents.split(',').map(s => s.trim()).map(content => {
       const contentMatch = content.match(contentsRegex);
-      if (contentMatch) {
-        return contentMatch[2];
+      if (!contentMatch) {
+        return null;
       }
-      return null;
-    }).filter(s => !!s);
+      const quantity = parseInt(contentMatch[1]);
+      const item = contentMatch[2].toString();
+      return {
+        quantity: quantity,
+        color: item
+      } as ParsedContentItem;
+    }).filter(result => !!result);
   }
 
   private static createDefinition(color: string) : BagDefinition {
@@ -59,14 +85,14 @@ export class Solution extends DayChallenge {
     const basicsMatch = ruleLine.match(basicsRegex);
 
     const containerColor = basicsMatch[1].toString();
-    const contents = basicsMatch[2].toString();
-    const containedColors = Solution.parseContents(contents);
+    const contentDefinition = basicsMatch[2].toString();
+    const contents = Solution.parseContents(contentDefinition);
 
-    containedColors.forEach(containedColor => {
+    contents.forEach(content => {
       const containerDefinition = Solution.getBagFromMap(containerColor, map);
-      const containedDefinition = Solution.getBagFromMap(containedColor, map);
+      const containedDefinition = Solution.getBagFromMap(content.color, map);
 
-      containerDefinition.addContent(containedDefinition);
+      containerDefinition.addContent(content.quantity, containedDefinition);
     });
   }
 
@@ -97,6 +123,10 @@ export class Solution extends DayChallenge {
     return possibleContainers;
   }
 
+  private colorTarget(): string {
+    return 'shiny gold';
+  }
+
   constructor() {
     super();
     const reader = new FileReader();
@@ -109,11 +139,13 @@ export class Solution extends DayChallenge {
 
   partOne(): void {
     const map = Solution.parseRules(this.lines);
-    const possibleContainers = Solution.findPossibleContainers('shiny gold', map);
-    console.log(`There are ${possibleContainers.size} possible containers for the shiny gold bag`);
+    const possibleContainers = Solution.findPossibleContainers(this.colorTarget(), map);
+    console.log(`There are ${possibleContainers.size} possible containers for the ${this.colorTarget()} bag`);
   }
 
   partTwo(): void {
-    throw new Error('Method not implemented.');
+    const map = Solution.parseRules(this.lines);
+    const target = map[this.colorTarget()];
+    console.log(`The ${target.color} bag contains ${target.countContainedBags()} other bags`);
   }
 }
