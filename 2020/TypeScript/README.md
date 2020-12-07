@@ -21,5 +21,6 @@ After building the solution, the compiled results will be in the `dist` director
 To run the solutions, use commands like:
 
 ```
-node dist/day-01/index.js
+node dist/index.js 1
+node dist/index.js 23
 ```
