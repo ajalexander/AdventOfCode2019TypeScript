@@ -1,9 +1,11 @@
 import { DayChallenge } from '../common/dayChallenge';
 import { FileReader } from '../common/fileUtils';
 
-// const inputPath = './src/day-04/examplePartOne.txt';
-// const inputPath = './src/day-04/examplePartTwo.txt';
-const inputPath = './src/day-04/problemInput.txt';
+// const inputFile = 'examplePartOne.txt';
+// const inputFile = 'examplePartTwo.txt';
+const inputFile = 'problemInput.txt';
+
+const inputPath = `${__dirname}/${inputFile}`;
 
 interface PassportFields {
   byr: string;

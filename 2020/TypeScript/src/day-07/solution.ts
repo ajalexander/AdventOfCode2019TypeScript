@@ -1,8 +1,10 @@
 import { DayChallenge } from '../common/dayChallenge';
 import { FileReader } from '../common/fileUtils';
 
-// const inputPath = './src/day-07/example.txt';
-const inputPath = './src/day-07/problemInput.txt';
+// const inputFile = 'example.txt';
+const inputFile = 'problemInput.txt';
+
+const inputPath = `${__dirname}/${inputFile}`;
 
 interface ParsedContentItem {
   quantity: number;

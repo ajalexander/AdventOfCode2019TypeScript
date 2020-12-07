@@ -2,6 +2,7 @@ import { readFileSync } from 'fs';
 
 export class FileReader {
   readFile(path: string) : string[] {
+    // console.log(`Reading lines from '${path}'`);
     return readFileSync(path).toString().split('\n');
   }
 

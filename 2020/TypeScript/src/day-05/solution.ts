@@ -1,8 +1,10 @@
 import { DayChallenge } from '../common/dayChallenge';
 import { FileReader } from '../common/fileUtils';
 
-// const inputPath = './src/day-05/example.txt';
-const inputPath = './src/day-05/problemInput.txt';
+// const inputFile = 'example.txt';
+const inputFile = 'problemInput.txt';
+
+const inputPath = `${__dirname}/${inputFile}`;
 
 interface ParsedTicket {
   specification: string;
