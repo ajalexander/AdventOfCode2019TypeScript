@@ -1,4 +1,4 @@
-import { DayChallenge } from '../common/dayChallenge';
+import { FileInputChallenge } from '../common/dayChallenge';
 import { FileReader } from '../common/fileUtils';
 
 // const inputFile = 'example.txt';
@@ -64,9 +64,7 @@ class Map {
   }
 }
 
-export class Solution extends DayChallenge {
-  private lines: string[];
-
+export class Solution extends FileInputChallenge {
   private atBottomOfRun(map: Map, position: Position) {
     return map.height() == (position.y + 1);
   }
@@ -104,9 +102,7 @@ export class Solution extends DayChallenge {
   }
 
   constructor() {
-    super();
-    const reader = new FileReader();
-    this.lines = reader.readFile(inputPath);
+    super(inputPath);
   }
 
   dayNumber(): number {

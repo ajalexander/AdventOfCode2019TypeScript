@@ -1,14 +1,11 @@
-import { DayChallenge } from '../common/dayChallenge';
-import { FileReader } from '../common/fileUtils';
+import { GroupedFileInputChallenge } from '../common/dayChallenge';
 
 // const inputFile = 'example.txt';
 const inputFile = 'problemInput.txt';
 
 const inputPath = `${__dirname}/${inputFile}`;
 
-export class Solution extends DayChallenge {
-  private groups: string[][];
-
+export class Solution extends GroupedFileInputChallenge {
   private static uniqueAnswers(answers: string[]) {
     return answers.filter((value, index, self) => self.indexOf(value) === index).sort();
   }
@@ -34,9 +31,7 @@ export class Solution extends DayChallenge {
   }
 
   constructor() {
-    super();
-    const reader = new FileReader();
-    this.groups = reader.readFileIntoLineGroups(inputPath);
+    super(inputPath);
   }
 
   dayNumber(): number {

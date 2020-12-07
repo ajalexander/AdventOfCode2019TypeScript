@@ -1,5 +1,4 @@
-import { DayChallenge } from '../common/dayChallenge';
-import { FileReader } from '../common/fileUtils';
+import { FileInputChallenge } from '../common/dayChallenge';
 
 // const inputFile = 'example.txt';
 const inputFile = 'problemInput.txt';
@@ -48,9 +47,7 @@ interface BagMap {
   [key: string]: BagDefinition;
 }
 
-export class Solution extends DayChallenge {
-  private lines: string[];
-
+export class Solution extends FileInputChallenge {
   private static parseContents(contents: string) : ParsedContentItem[] {
     const contentsRegex = /^(\d+) ([^,]+) bag(s?)$/;
 
@@ -130,9 +127,7 @@ export class Solution extends DayChallenge {
   }
 
   constructor() {
-    super();
-    const reader = new FileReader();
-    this.lines = reader.readFile(inputPath);
+    super(inputPath);
   }
 
   dayNumber(): number {

@@ -1,5 +1,4 @@
-import { DayChallenge } from '../common/dayChallenge';
-import { FileReader } from '../common/fileUtils';
+import { GroupedFileInputChallenge } from '../common/dayChallenge';
 
 // const inputFile = 'examplePartOne.txt';
 // const inputFile = 'examplePartTwo.txt';
@@ -18,9 +17,7 @@ interface PassportFields {
   cid: string;
 }
 
-export class Solution extends DayChallenge {
-  private groups: string[][];
-
+export class Solution extends GroupedFileInputChallenge {
   private parsePassportData(data: string[]) {
     const parsedData = {} as PassportFields;
 
@@ -107,9 +104,7 @@ export class Solution extends DayChallenge {
   }
 
   constructor() {
-    super();
-    const reader = new FileReader();
-    this.groups = reader.readFileIntoLineGroups(inputPath);
+    super(inputPath);
   }
 
   dayNumber(): number {

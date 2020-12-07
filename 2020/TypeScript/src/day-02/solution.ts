@@ -1,14 +1,11 @@
-import { DayChallenge } from '../common/dayChallenge';
-import { FileReader } from '../common/fileUtils';
+import { FileInputChallenge } from '../common/dayChallenge';
 
 // const inputFile = 'example.txt';
 const inputFile = 'problemInput.txt';
 
 const inputPath = `${__dirname}/${inputFile}`;
 
-export class Solution extends DayChallenge {
-  private lines: string[];
-
+export class Solution extends FileInputChallenge {
   private static parseEntry(dataRow: string) {
 
     const expression = /(\d+)-(\d+) (\w): (.*)+/;
@@ -45,9 +42,7 @@ export class Solution extends DayChallenge {
   }
 
   constructor() {
-    super();
-    const reader = new FileReader();
-    this.lines = reader.readFile(inputPath);
+    super(inputPath);
   }
 
   dayNumber(): number {

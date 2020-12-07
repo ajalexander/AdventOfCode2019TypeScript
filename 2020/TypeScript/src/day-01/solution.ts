@@ -1,5 +1,4 @@
-import { DayChallenge } from '../common/dayChallenge';
-import { FileReader } from '../common/fileUtils';
+import { FileInputChallenge } from '../common/dayChallenge';
 import { SetBuilder } from './setBuilder';
 
 // const inputFile = 'example.txt';
@@ -9,7 +8,7 @@ const inputPath = `${__dirname}/${inputFile}`;
 
 const targetSum = 2020;
 
-export class Solution extends DayChallenge {
+export class Solution extends FileInputChallenge {
   private numbers: number[];
 
   private solve(numberOfInputs: number) {
@@ -31,9 +30,8 @@ export class Solution extends DayChallenge {
   }
 
   constructor() {
-    super();
-    const reader = new FileReader();
-    this.numbers = reader.readFile(inputPath).map(s => parseInt(s));
+    super(inputPath);
+    this.numbers = this.lines.map(s => parseInt(s));
   }
 
   dayNumber(): number {

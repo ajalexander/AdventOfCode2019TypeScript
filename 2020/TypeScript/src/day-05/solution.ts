@@ -1,5 +1,4 @@
-import { DayChallenge } from '../common/dayChallenge';
-import { FileReader } from '../common/fileUtils';
+import { FileInputChallenge } from '../common/dayChallenge';
 
 // const inputFile = 'example.txt';
 const inputFile = 'problemInput.txt';
@@ -13,9 +12,7 @@ interface ParsedTicket {
   seatId: number;
 }
 
-export class Solution extends DayChallenge {
-  private lines: string[];
-
+export class Solution extends FileInputChallenge {
   private static parseForNumber(valueSpecification: string, rangeSize: number, lowSymbol: string, highSymbol: string) {
     const possibleRange = {
       minimum: 0,
@@ -69,9 +66,7 @@ export class Solution extends DayChallenge {
   }
 
   constructor() {
-    super();
-    const reader = new FileReader();
-    this.lines = reader.readFile(inputPath);
+    super(inputPath);
   }
 
   dayNumber(): number {
