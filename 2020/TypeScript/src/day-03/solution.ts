@@ -1,5 +1,4 @@
 import { FileInputChallenge } from '../common/dayChallenge';
-import { FileReader } from '../common/fileUtils';
 
 // const inputFile = 'example.txt';
 const inputFile = 'problemInput.txt';
