@@ -1,9 +1,14 @@
 import { DayChallenge } from '../common/dayChallenge';
-import { problemInputs } from './data';
+import { FileReader } from '../common/fileUtils';
 
-const input = problemInputs;
+// const inputFile = 'example.txt';
+const inputFile = 'problemInput.txt';
+
+const inputPath = `${__dirname}/${inputFile}`;
 
 export class Solution extends DayChallenge {
+  private lines: string[];
+
   private static parseEntry(dataRow: string) {
 
     const expression = /(\d+)-(\d+) (\w): (.*)+/;
@@ -39,17 +44,23 @@ export class Solution extends DayChallenge {
     return (firstMatch && !secondMatch) || (!firstMatch && secondMatch);
   }
 
+  constructor() {
+    super();
+    const reader = new FileReader();
+    this.lines = reader.readFile(inputPath);
+  }
+
   dayNumber(): number {
     return 2;
   }
 
   partOne(): void {
-    const validPasswords = input.map(Solution.isPasswordValidForFirstRuleset).filter(Boolean).length;
+    const validPasswords = this.lines.map(Solution.isPasswordValidForFirstRuleset).filter(Boolean).length;
     console.log(`There are ${validPasswords} valid passwords`);
   }
 
   partTwo(): void {
-    const validPasswords = input.map(Solution.isPasswordValidForSecondRuleset).filter(Boolean).length;
+    const validPasswords = this.lines.map(Solution.isPasswordValidForSecondRuleset).filter(Boolean).length;
     console.log(`There are ${validPasswords} valid passwords`);
   }
 }

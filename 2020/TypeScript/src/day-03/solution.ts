@@ -1,7 +1,10 @@
 import { DayChallenge } from '../common/dayChallenge';
-import { problemInputs } from './data';
+import { FileReader } from '../common/fileUtils';
 
-const input = problemInputs;
+// const inputFile = 'example.txt';
+const inputFile = 'problemInput.txt';
+
+const inputPath = `${__dirname}/${inputFile}`;
 
 interface Position {
   x: number;
@@ -62,12 +65,14 @@ class Map {
 }
 
 export class Solution extends DayChallenge {
+  private lines: string[];
+
   private atBottomOfRun(map: Map, position: Position) {
     return map.height() == (position.y + 1);
   }
 
   private treesEncountered(rightMovement: number, downMovement: number) {
-    const map = new Map(input.slice());
+    const map = new Map(this.lines.slice());
     const currentPosition = {
       x: 0,
       y: 0
@@ -96,6 +101,12 @@ export class Solution extends DayChallenge {
     console.log(`When moving right ${rightMovement} and down ${downMovement}, ${encounteredTrees} trees will be encountered`);
 
     return encounteredTrees;
+  }
+
+  constructor() {
+    super();
+    const reader = new FileReader();
+    this.lines = reader.readFile(inputPath);
   }
 
   dayNumber(): number {

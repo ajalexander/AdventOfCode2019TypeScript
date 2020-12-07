@@ -1,13 +1,19 @@
 import { DayChallenge } from '../common/dayChallenge';
-import { problemInputs } from './data';
+import { FileReader } from '../common/fileUtils';
 import { SetBuilder } from './setBuilder';
 
-const inputs = problemInputs;
+// const inputFile = 'example.txt';
+const inputFile = 'problemInput.txt';
+
+const inputPath = `${__dirname}/${inputFile}`;
+
 const targetSum = 2020;
 
 export class Solution extends DayChallenge {
+  private numbers: number[];
+
   private solve(numberOfInputs: number) {
-    const sets = new SetBuilder().buildPossibleSets(inputs, numberOfInputs);
+    const sets = new SetBuilder().buildPossibleSets(this.numbers, numberOfInputs);
   
     sets.forEach(set => {
       let sum = 0;
@@ -22,6 +28,12 @@ export class Solution extends DayChallenge {
         console.log(`The product of [${set}] is ${product}`);
       }
     });
+  }
+
+  constructor() {
+    super();
+    const reader = new FileReader();
+    this.numbers = reader.readFile(inputPath).map(s => parseInt(s));
   }
 
   dayNumber(): number {
