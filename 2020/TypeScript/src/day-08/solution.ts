@@ -5,6 +5,11 @@ const inputFile = 'problemInput.txt';
 
 const inputPath = `${__dirname}/${inputFile}`;
 
+enum TerminationReason {
+  endOfInstructions,
+  infiniteLoop
+}
+
 enum InstructionType {
   acc = 'acc',
   jmp = 'jmp',
@@ -30,10 +35,11 @@ class CodeParser {
 }
 
 class BootCodeState {
-  private instructions: Instruction[];
-  private accumlator: number;
-  private nextInstructionIndex: number;
-  private visitedInstructions: number[];
+  instructions: Instruction[];
+  accumulator: number;
+  nextInstructionIndex: number;
+  visitedInstructions: number[];
+  terminationReason?: TerminationReason;
 
   private runOne(instructionIndex: number) {
     const instruction = this.instructions[instructionIndex];
@@ -48,7 +54,7 @@ class BootCodeState {
         this.nextInstructionIndex += 1;
         break;
       case InstructionType.acc:
-        this.accumlator += instruction.number;
+        this.accumulator += instruction.number;
         this.nextInstructionIndex += 1;
         break;
       case InstructionType.jmp:
@@ -67,18 +73,57 @@ class BootCodeState {
   constructor(instructions: Instruction[]) {
     this.instructions = instructions;
     this.visitedInstructions = [];
-    this.accumlator = 0;
+    this.accumulator = 0;
     this.nextInstructionIndex = 0;
   }
 
-  runUntilAboutToRepeat() {
-    while (!this.alreadyRunNextInstruction()) {
+  run() {
+    while (this.nextInstructionIndex < this.instructions.length) {
+      if (this.alreadyRunNextInstruction()) {
+        this.terminationReason = TerminationReason.infiniteLoop;
+        return;
+      }
       this.runOne(this.nextInstructionIndex);
     }
+    this.terminationReason = TerminationReason.endOfInstructions;
+  }
+}
+
+class CodeCorruptionCleaner {
+  private attemptCorrection(nextIndexToTry: number) {
+    const workingInstructionSet = CodeParser.parse(this.codeLines);
+      const instruction = workingInstructionSet[nextIndexToTry];
+      switch (instruction.type) {
+        case InstructionType.nop:
+          instruction.type = InstructionType.jmp;
+          break;
+        case InstructionType.jmp:
+          instruction.type = InstructionType.nop;
+          break;
+      }
+
+      const state = new BootCodeState(workingInstructionSet);
+      state.run();
+
+      return state;
   }
 
-  accumulatorValue() {
-    return this.accumlator;
+  constructor(private codeLines: string[]){
+  }
+
+  cleanCode() {
+    let nextIndexToTry = 0;
+    while (nextIndexToTry < this.codeLines.length) {
+      const stateFromAttempt = this.attemptCorrection(nextIndexToTry);
+
+      if (stateFromAttempt.terminationReason === TerminationReason.endOfInstructions) {
+        return stateFromAttempt;
+      }
+
+      nextIndexToTry += 1;
+    }
+
+    return null;
   }
 }
 
@@ -94,10 +139,14 @@ export class Solution extends FileInputChallenge {
   partOne(): void {
     const parsedInstructions = CodeParser.parse(this.lines);
     const state = new BootCodeState(parsedInstructions);
-    state.runUntilAboutToRepeat();
-    console.log(`The accumulator is at ${state.accumulatorValue()} before the code starts to repeat`);
+    state.run();
+    console.log(`The accumulator is at ${state.accumulator} before the code starts to repeat`);
   }
 
   partTwo(): void {
+    const cleaner = new CodeCorruptionCleaner(this.lines);
+    const state = cleaner.cleanCode();
+    console.log(`The accumulator is at ${state.accumulator} after the cleaned code completes`);
+
   }
 }
