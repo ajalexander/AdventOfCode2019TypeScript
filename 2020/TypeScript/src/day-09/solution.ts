@@ -30,13 +30,36 @@ export class Solution extends FileInputChallenge {
   }
 
   private findInadherentNumbers(numbers: number[], preambleSize: number) {
-    const inadherentNumbers = [];
     for (let index = preambleSize; index < numbers.length; index += 1) {
       if (!this.possibleBySummation(numbers[index], numbers.slice(index - preambleSize, index))) {
-        inadherentNumbers.push(numbers[index]);
+        return numbers[index];
       }
     }
-    return inadherentNumbers;
+    return null;
+  }
+
+  private findContigousRangeEqualingNumber(numbers: number[], targetNumber: number) {
+    const targetIndex = numbers.indexOf(targetNumber);
+
+    for (let startIndex = 0; startIndex < targetIndex; startIndex += 1) {
+      for (let endIndex = startIndex + 1; endIndex < targetIndex; endIndex += 1) {
+        const contigousRange = numbers.slice(startIndex, endIndex + 1);
+        const contiguousSum = numbers.slice(startIndex, endIndex + 1).reduce((acc, value) => acc + value, 0);
+        if (contiguousSum === targetNumber) {
+          const smallestValue = Math.min(...contigousRange);
+          const largetValue = Math.max(...contigousRange);
+
+          // console.log(`The contigous range from ${startIndex} - ${endIndex} produces the sum of ${targetNumber}`);
+          // console.log(`The smallest value in that range is ${smallestValue}; the largest is ${largetValue}`);
+
+          return {
+            smallest: smallestValue,
+            largest: largetValue,
+          };
+        }
+      }
+    }
+    return null;
   }
 
   constructor() {
@@ -49,10 +72,14 @@ export class Solution extends FileInputChallenge {
   }
 
   partOne(): void {
-    const inadherentNumbers = this.findInadherentNumbers(this.numbers, preambleSize);
-    console.log(`The inadherent numbers are: ${inadherentNumbers}`);
+    const inadherentNumber = this.findInadherentNumbers(this.numbers, preambleSize);
+    console.log(`The first inadherent number is: ${inadherentNumber}`);
   }
 
   partTwo(): void {
+    const inadherentNumber = this.findInadherentNumbers(this.numbers, preambleSize);
+    const range = this.findContigousRangeEqualingNumber(this.numbers, inadherentNumber);
+    const sum = range.smallest + range.largest;
+    console.log(`The sum of the contiguous range is ${sum}`);
   }
 }
