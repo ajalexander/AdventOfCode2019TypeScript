@@ -15,44 +15,29 @@ interface ChainingStep {
 export class Solution extends FileInputChallenge {
   private sortedAdapters: number[];
 
-  private addStepToCopyOfChain(chain: ChainingStep[], step: ChainingStep) {
-    const copy = chain.slice(0);
-    copy.push(step);
-    return copy;
-  }
-
-  private buildChainsFromPoint(currentSteps: ChainingStep[] = [], startIndex = 0): ChainingStep[][] {
-    const possibleChains: ChainingStep[][] = [];
-
-    const previous = currentSteps.length > 0 ?  currentSteps[currentSteps.length - 1].adapterSize : 0;
-    for (let index = startIndex; index < this.sortedAdapters.length; index += 1) {
-      const adapter = this.sortedAdapters[index];
-      const stepChange = adapter - previous;
-
-      if (stepChange <= 3) {
-        const newChain = this.addStepToCopyOfChain(currentSteps, {
-          adapterSize: adapter,
-          stepChange: stepChange,
-          deviceStep: false,
-        });
-        possibleChains.push(...this.buildChainsFromPoint(newChain, index + 1));
+  private countPathsFromStartToEnd() {
+    const waysToReachPointMap = {};
+    for (let index = 0; index < this.sortedAdapters.length; index += 1) {
+      if (this.sortedAdapters[index] <= 3) {
+        waysToReachPointMap[index] = 1;
+      } else {
+        waysToReachPointMap[index] = 0;
       }
+      
+      for (let lowerIndex = index - 3; lowerIndex < index; lowerIndex += 1) {
+        if (lowerIndex < 0) {
+          continue;
+        }
+
+        if (this.sortedAdapters[index] - this.sortedAdapters[lowerIndex] <= 3) {
+          waysToReachPointMap[index] = waysToReachPointMap[index] + waysToReachPointMap[lowerIndex];
+        }
+      }
+
+      // console.log(`There are ${waysToReachPointMap[index]} ways to reach ${this.sortedAdapters[index]}`);
     }
 
-    const newChain = this.addStepToCopyOfChain(currentSteps, {
-      adapterSize: previous + 3,
-      stepChange: 3,
-      deviceStep: true,
-    });
-    possibleChains.push(newChain);
-
-    return possibleChains.sort((a, b) => this.maximumJoltage(a) - this.maximumJoltage(b));
-  }
-  
-  private buildAllPossibleChainsToTotal(targetTotal: number): ChainingStep[][] {
-    const possibleChains = this.buildChainsFromPoint();
-    const validChains = possibleChains.filter(chain => this.maximumJoltage(chain) === targetTotal);
-    return validChains;
+    return waysToReachPointMap[this.sortedAdapters.length - 1];
   }
 
   private buildLargestChain(): ChainingStep[] {
@@ -91,10 +76,6 @@ export class Solution extends FileInputChallenge {
     }, {});
   }
 
-  private maximumJoltage(steps: ChainingStep[]) {
-    return steps[steps.length - 1].adapterSize;
-  }
-
   constructor() {
     super(inputPath);
     this.sortedAdapters = this.lines
@@ -116,8 +97,7 @@ export class Solution extends FileInputChallenge {
   }
 
   partTwo(): void {
-    const largestChain = this.buildLargestChain();
-    const validChains = this.buildAllPossibleChainsToTotal(this.maximumJoltage(largestChain));
-    console.log(`There are ${validChains.length} possible chains`);
+    const possiblePaths = this.countPathsFromStartToEnd();
+    console.log(`There are ${possiblePaths} possible chains`);
   }
 }
