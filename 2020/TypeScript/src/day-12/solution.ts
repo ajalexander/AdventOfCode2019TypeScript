@@ -79,16 +79,30 @@ class ShipOnlyPositionState implements PositionState {
     }
   }
 
-  private turn(degrees: number, rotationFunction: (direction: Direction) => Direction) {
-    let turnsToPerform = degrees / 90;
-    let newDirection = this.direction;
-
-    while (turnsToPerform > 0) {
-      newDirection = rotationFunction(newDirection);
-      turnsToPerform -= 1;
+  private static rotateAround(direction: Direction) {
+    switch (direction) {
+      case Direction.north:
+        return Direction.south;
+      case Direction.east:
+        return Direction.west;
+      case Direction.south:
+        return Direction.north;
+      case Direction.west:
+        return Direction.east;
     }
+  }
 
-    return new ShipOnlyPositionState(new Position(this.position.northSouth, this.position.eastWest), newDirection);
+  private turn(degrees: number, oneTurnFunction: (direction: Direction) => Direction, threeTurnFunction: (direction: Direction) => Direction) {
+    const effectiveTurns = (degrees / 90) % 4;
+    switch (effectiveTurns) {
+      case 1:
+        return new ShipOnlyPositionState(this.position, oneTurnFunction(this.direction));
+      case 2:
+        return new ShipOnlyPositionState(this.position, ShipOnlyPositionState.rotateAround(this.direction));
+      case 3:
+        return new ShipOnlyPositionState(this.position, threeTurnFunction(this.direction));
+    }
+    return this;
   }
 
   constructor(position = new Position(0, 0), direction: Direction = Direction.east) {
@@ -126,11 +140,11 @@ class ShipOnlyPositionState implements PositionState {
   }
 
   turnLeft(degrees: number) {
-    return this.turn(degrees, ShipOnlyPositionState.rotateLeft);
+    return this.turn(degrees, ShipOnlyPositionState.rotateLeft, ShipOnlyPositionState.rotateRight);
   }
 
   turnRight(degrees: number) {
-    return this.turn(degrees, ShipOnlyPositionState.rotateRight);
+    return this.turn(degrees, ShipOnlyPositionState.rotateRight, ShipOnlyPositionState.rotateLeft);
   }
 }
 
@@ -146,16 +160,21 @@ class WaypointBasedPositionState implements PositionState {
     return new Position(relativePosition.eastWest * -1, relativePosition.northSouth);
   }
 
-  private turn(degrees: number, rotationFunction: (relativePosition: Position) => Position) {
-    let turnsToPerform = degrees / 90;
-    let newWaypointPosition = this.relativeWaypointPosition;
+  private static rotateAround(relativePosition: Position) {
+    return new Position(relativePosition.northSouth * -1, relativePosition.eastWest * -1);
+  }
 
-    while (turnsToPerform > 0) {
-      newWaypointPosition = rotationFunction(newWaypointPosition);
-      turnsToPerform -= 1;
+  private turn(degrees: number, oneTurnFunction: (relativePosition: Position) => Position, threeTurnFunction: (relativePosition: Position) => Position) {
+    const effectiveTurns = (degrees / 90) % 4;
+    switch (effectiveTurns) {
+      case 1:
+        return new WaypointBasedPositionState(this.position, oneTurnFunction(this.relativeWaypointPosition));
+      case 2:
+        return new WaypointBasedPositionState(this.position, WaypointBasedPositionState.rotateAround(this.relativeWaypointPosition));
+      case 3:
+        return new WaypointBasedPositionState(this.position, threeTurnFunction(this.relativeWaypointPosition));
     }
-
-    return new WaypointBasedPositionState(this.position, newWaypointPosition);
+    return this;
   }
 
   constructor(position = new Position(0, 0), relativeWaypointPosition = new Position(1, 10)) {
@@ -187,11 +206,11 @@ class WaypointBasedPositionState implements PositionState {
   }
 
   turnLeft(degrees: number) {
-    return this.turn(degrees, WaypointBasedPositionState.rotateLeft);
+    return this.turn(degrees, WaypointBasedPositionState.rotateLeft, WaypointBasedPositionState.rotateRight);
   }
 
   turnRight(degrees: number) {
-    return this.turn(degrees, WaypointBasedPositionState.rotateRight);
+    return this.turn(degrees, WaypointBasedPositionState.rotateRight, WaypointBasedPositionState.rotateLeft);
   }
 }
 
