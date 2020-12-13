@@ -43,45 +43,44 @@ export class Solution extends FileInputChallenge {
     }).sort((a, b) => a.waitTime - b.waitTime);
   }
 
-  private testTime(timestamp: number, options: number[]) {
-    for (let index = 0; index < options.length; index += 1) {
-      if (options[index]) {
-        const necessaryTime = timestamp + index;
-        if (necessaryTime % options[index] !== 0) {
-          return false;
-        }
+  private lookForMatchingTime(options: number[]): number {
+    const inputs = options
+      .map((value, index) => {
+        return {
+          offset: index,
+          bus: value
+        };
+      })
+      .filter(item => item.bus);
+    
+    let period = inputs[0].bus;
+    let time = period;
+
+    inputs.slice(1).forEach(item => {
+      while ((time + item.offset) % item.bus !== 0) {
+        time += period;
       }
-    }
-    return true;
+
+      period *= item.bus;
+    });
+
+    return time;
   }
 
-  private lookForMatchingTime(options: number[], startingPoint = 0, bailoutPoint?: number): number {
-    let currentTimestamp = startingPoint;
-    const firstNumber = options[0];
-    while ((bailoutPoint && currentTimestamp <= bailoutPoint) || (!bailoutPoint)) {
-      if (this.testTime(currentTimestamp, options)) {
-        return currentTimestamp;
-      }
-      currentTimestamp += firstNumber;
-    }
+  // private partTwoExample(input: string): void {
+  //   const options = ScheduleParser.parseTimestampSchedule([undefined, input]);
+  //   const earliestTime = this.lookForMatchingTime(options);
 
-    return undefined;
-  }
+  //   console.log(`Example for '${input}', timestamp ${earliestTime}`);
+  // }
 
-  private partTwoExample(input: string, expectedAnswer: number): void {
-    const options = ScheduleParser.parseTimestampSchedule([undefined, input]);
-    const earliestTime = this.lookForMatchingTime(options, 0, expectedAnswer);
-
-    console.log(`Example for '${input}', timestamp ${earliestTime}`);
-  }
-
-  private partTwoExamples(): void {
-    this.partTwoExample('17,x,13,19', 3417);
-    this.partTwoExample('67,7,59,61', 754018);
-    this.partTwoExample('67,x,7,59,61', 779210);
-    this.partTwoExample('67,7,x,59,61', 1261476);
-    this.partTwoExample('1789,37,47,1889', 1202161486);
-  }
+  // private partTwoExamples(): void {
+  //   this.partTwoExample('17,x,13,19');
+  //   this.partTwoExample('67,7,59,61');
+  //   this.partTwoExample('67,x,7,59,61');
+  //   this.partTwoExample('67,7,x,59,61');
+  //   this.partTwoExample('1789,37,47,1889');
+  // }
 
   constructor() {
     super(inputPath);
@@ -101,10 +100,10 @@ export class Solution extends FileInputChallenge {
   }
 
   partTwo(): void {
-    this.partTwoExamples();
+    // this.partTwoExamples();
   
     const options = ScheduleParser.parseTimestampSchedule(this.lines);
-    const earliestTime = this.lookForMatchingTime(options, 100000000000000);
+    const earliestTime = this.lookForMatchingTime(options);
 
     console.log(`The earliest schedule matching the rules is ${earliestTime}`);
   }
