@@ -27,6 +27,25 @@ export class Solution extends FileInputChallenge {
     memory[parsedAddress] = maskedValue;
   }
 
+  private static replaceBit(address: string[], index: number, value: string) {
+    const copy = address.slice(0);
+    copy[index] = value;
+    return copy;
+  }
+
+  private static replaceFloatingMemory(address: string[]) {
+    const possibleValues = ['0', '1'];
+
+    const nextFloatingBit = address.indexOf('X');
+    if (nextFloatingBit < 0) {
+      return [address];
+    }
+
+    return possibleValues
+      .map(value => Solution.replaceFloatingMemory(Solution.replaceBit(address, nextFloatingBit, value)))
+      .flat();
+  }
+
   private static processInstructionVersion2(memory: Memory, currentMask: string, line: string) {
     const match = line.match(/mem\[(.*)\] = (.*)/);
     const parsedAddress = parseInt(match[1]);
@@ -41,34 +60,13 @@ export class Solution extends FileInputChallenge {
           case '0':
             return value;
           case '1':
-            return 1;
+            return '1';
           default:
             return 'X';
         }
-      })
-      .join('');
-    
-
-    const possibleValues = ['0', '1'];
-
-    const splitAddress = maskedBinaryAddress.split('');
-    let addresses = [splitAddress];
-
-    while (addresses[0].includes('X')) {
-      const currentIndex = addresses[0].indexOf('X');
-
-      const newAddresses = [];
-      addresses.forEach(address => {
-        possibleValues.forEach(newValue => {
-          const newAddress = address.slice(0);
-          newAddress[currentIndex] = newValue;
-          newAddresses.push(newAddress);
-        });
       });
 
-      addresses = newAddresses;
-    }
-
+    const addresses = Solution.replaceFloatingMemory(maskedBinaryAddress);
     addresses.forEach(address => {
       memory[parseInt(address.join(''), 2)] = parsedValue;
     });
