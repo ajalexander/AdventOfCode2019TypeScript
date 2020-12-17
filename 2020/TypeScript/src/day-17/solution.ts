@@ -17,53 +17,79 @@ class DimensionRange {
   expand(): DimensionRange {
     return new DimensionRange(this.minimum - 1, this.maximum + 1);
   }
+
+  points(): number[] {
+    const points = [];
+    for (let index = this.minimum; index <= this.maximum; index += 1) {
+      points.push(index);
+    }
+    return points;
+  }
 }
 
 class Dimension {
-  readonly x: DimensionRange;
-  readonly y: DimensionRange;
-  readonly z: DimensionRange;
+  readonly dimensionCount: number;
+  readonly dimensionRanges: DimensionRange[];
 
-  constructor(x: DimensionRange, y: DimensionRange, z: DimensionRange) {
-    this.x = x;
-    this.y = y;
-    this.z = z;
+  private shiftedPossibilities() {
+    const shift = [-1, 0, 1];
+
+    let current: number[][] = [];
+    let previous: number[][] = [];
+    for (let dimensionIndex = 0; dimensionIndex < this.dimensionCount; dimensionIndex += 1) {
+      previous = current;
+      current = [];
+      shift.forEach(point => {
+        if (previous.length > 0) {
+          previous.forEach(previousItem => {
+            current.push([...previousItem, point]);
+          })
+        } else {
+          current.push([point]);
+        }
+      });
+    }
+
+    return current.filter(coordinate => !coordinate.every(point => point === 0));
+  }
+
+  constructor(dimensionRanges: DimensionRange[]) {
+    this.dimensionCount = dimensionRanges.length;
+    this.dimensionRanges = dimensionRanges;
   }
 
   expand(): Dimension {
-    return new Dimension(this.x.expand(), this.y.expand(), this.z.expand());
+    return new Dimension(this.dimensionRanges.map(r => r.expand()));
   }
 
   coordinates() {
-    const coordinates: Coordinate[] = [];
-    for (let z = this.z.minimum; z <= this.z.maximum; z += 1) {
-      for (let x = this.z.minimum; x <= this.x.maximum; x += 1) {
-        for (let y = this.y.minimum; y <= this.y.maximum; y += 1) {
-          coordinates.push({ x, y, z });
+    let current: number[][] = [];
+    let previous: number[][] = [];
+    for (let dimensionIndex = 0; dimensionIndex < this.dimensionCount; dimensionIndex += 1) {
+      previous = current;
+      current = [];
+      this.dimensionRanges[dimensionIndex].points().forEach(point => {
+        if (previous.length > 0) {
+          previous.forEach(previousItem => {
+            current.push([...previousItem, point]);
+          })
+        } else {
+          current.push([point]);
         }
-      }
+      });
     }
-    return coordinates;
+
+    return current;
   }
 
-  neighborsOf(coordinate: Coordinate) {
-    const neighbors: Coordinate[] = [];
-
-    const shift = [-1, 0, 1];
-
-    shift.forEach(zShift => {
-      shift.forEach(xShift => {
-        shift.forEach(yShift => {
-          if (zShift === 0 && xShift === 0 && yShift === 0) {
-            return;
-          }
-
-          neighbors.push({ x: coordinate.x + xShift, y: coordinate.y + yShift, z: coordinate.z + zShift });
-        });
+  neighborsOf(coordinate: number[]) {
+    return this.shiftedPossibilities().map(shift => {
+      const neighbor = coordinate.slice();
+      shift.forEach((point, index) => {
+        neighbor[index] += point;
       });
+      return neighbor;
     });
-
-    return neighbors;
   }
 }
 
@@ -74,26 +100,6 @@ class DimensionState {
   constructor(dimension: Dimension, activePositions: ActivePositions) {
     this.currentDimensions = dimension;
     this.activePositions = activePositions;
-  }
-
-  print() {
-    for (let zIndex = this.currentDimensions.z.minimum; zIndex <= this.currentDimensions.z.maximum; zIndex += 1) {
-      console.log(`z=${zIndex}`);
-      for (let yIndex = this.currentDimensions.y.minimum; yIndex <= this.currentDimensions.y.maximum; yIndex += 1) {
-        const rowValues = [];
-        for (let xIndex = this.currentDimensions.x.minimum; xIndex <= this.currentDimensions.x.maximum; xIndex += 1) {
-          if (this.activePositions.isActive({ x: xIndex, y: yIndex, z: zIndex })) {
-            rowValues.push('#');
-          } else {
-            rowValues.push('.');
-          }
-        }
-        console.log(rowValues.join(''));
-      }
-      console.log();
-    }
-    console.log();
-    console.log();
   }
 
   step() {
@@ -123,67 +129,73 @@ class DimensionState {
   }
 }
 
-interface Coordinate {
-  x: number;
-  y: number;
-  z: number;
-}
-
 class ActivePositions {
-  private readonly activePositions: Coordinate[];
+  private readonly activePositions: number[][];
 
-  constructor(activePositions: Coordinate[] = []) {
+  constructor(activePositions: number[][] = []) {
     this.activePositions = activePositions.slice();
   }
 
-  isActive(coordinate: Coordinate) {
-    return this.activePositions.some(other => other.z === coordinate.z && other.x === coordinate.x && other.y === coordinate.y);
+  isActive(coordinate: number[]) {
+    return this.activePositions.some(other => {
+      for (let index = 0; index < other.length; index += 1) {
+        if (coordinate[index] !== other[index]) {
+          return false;
+        }
+      }
+      return true;
+    });
   }
 
-  activeCoordinates(): Coordinate[] {
-    return this.activePositions.slice();
+  activeCoordinates(): number[][] {
+    return this.activePositions;
   }
 }
 
 class InputParser {
-  static buildInitialState(lines: string[]) {
+  static buildInitialState(lines: string[], dimensions: number) {
     const x = lines[0].length - 1;
     const y = lines.length - 1;
 
-    const activePostions: Coordinate[] = [];
+    const activePositions: number[][] = [];
 
     lines.forEach((line, y) => {
       line.split('').forEach((value, x) => {
         if (value === '#') {
-          activePostions.push({ x, y, z: 0 });
+          const coordinate = [x, y];
+          for (let i = 3; i <= dimensions; i += 1) {
+            coordinate.push(0);
+          }
+          activePositions.push(coordinate);
         }
       });
     });
 
-    const initialDimension = new Dimension(
+    const ranges = [
       new DimensionRange(0, x),
       new DimensionRange(0, y),
-      new DimensionRange(0, 0)
+      
+    ];
+    for (let i = 3; i <= dimensions; i += 1) {
+      ranges.push(new DimensionRange(0, 0));
+    }
+
+    const initialDimension = new Dimension(
+      ranges
     );
 
-    const initialActivePostions = new ActivePositions(activePostions);
+    const initialActivePostions = new ActivePositions(activePositions);
 
     return new DimensionState(initialDimension, initialActivePostions);
   }
 }
 
 export class Solution extends FileInputChallenge {
-  private runSteps(targetCount: number) {
-    let state = InputParser.buildInitialState(this.lines);
-
-    // console.log('Initial state');
-    // state.print();
+  private runSteps(targetCount: number, dimensionSize: number) {
+    let state = InputParser.buildInitialState(this.lines, dimensionSize);
 
     for (let i = 0; i < targetCount; i+= 1) {
       state = state.step();
-
-      // console.log(`After ${i + 1} steps`);
-      // state.print();
     }
 
     return state;
@@ -197,7 +209,7 @@ export class Solution extends FileInputChallenge {
   }
 
   partOne(): void {
-    const finalState = this.runSteps(6);
+    const finalState = this.runSteps(6, 3);
     const activeCoordinates = finalState.activePositions.activeCoordinates();
     const activeCoordinateCount = activeCoordinates.length;
 
@@ -205,6 +217,10 @@ export class Solution extends FileInputChallenge {
   }
 
   partTwo(): void {
+    const finalState = this.runSteps(6, 4);
+    const activeCoordinates = finalState.activePositions.activeCoordinates();
+    const activeCoordinateCount = activeCoordinates.length;
 
+    console.log(`There are ${activeCoordinateCount} active cubes`);
   }
 }
