@@ -29,8 +29,19 @@ class Stack<T> {
   }
 }
 
-class InfixToPostfixConverter {
-  private static precedence(operator: string) {
+class OperatorPrecedenceResolver {
+  static normal(operator: string) {
+    switch (operator) {
+      case '*':
+        return 2;
+      case '+':
+        return 1;
+      default:
+        return 0;
+    }
+  }
+
+  static part1(operator: string) {
     switch (operator) {
       case '*':
         return 1;
@@ -41,6 +52,19 @@ class InfixToPostfixConverter {
     }
   }
 
+  static part2(operator: string) {
+    switch (operator) {
+      case '*':
+        return 1;
+      case '+':
+        return 2;
+      default:
+        return 0;
+    }
+  }
+}
+
+class InfixToPostfixConverter {
   private static isNumeric(current: string) {
     return !isNaN(parseInt(current));
   }
@@ -57,7 +81,7 @@ class InfixToPostfixConverter {
     return current === ')';
   }
 
-  static convert(input: string) {
+  static convert(input: string, prededenceResolver: (value: string) => number) {
     const operatorStack = new Stack<string>();
     const postfixCollection = [];
 
@@ -66,7 +90,7 @@ class InfixToPostfixConverter {
       if (InfixToPostfixConverter.isNumeric(current)) {
         postfixCollection.push(current);
       } else if (InfixToPostfixConverter.isOperator(current)) {
-        while (!operatorStack.isEmpty() && !InfixToPostfixConverter.isLeftParenthesis(operatorStack.peek()) && InfixToPostfixConverter.precedence(operatorStack.peek()) >= InfixToPostfixConverter.precedence(current)) {
+        while (!operatorStack.isEmpty() && !InfixToPostfixConverter.isLeftParenthesis(operatorStack.peek()) && prededenceResolver(operatorStack.peek()) >= prededenceResolver(current)) {
           postfixCollection.push(operatorStack.pop());
         }
         operatorStack.push(current);
@@ -122,13 +146,16 @@ export class Solution extends FileInputChallenge {
   }
 
   partOne(): void {
-    const converted = this.lines.map(line => InfixToPostfixConverter.convert(line));
+    const converted = this.lines.map(line => InfixToPostfixConverter.convert(line, OperatorPrecedenceResolver.part1));
     const solved = converted.map(collection => Solver.solve(collection));
     const sumOfSolved = solved.reduce((acc, value) => acc + value, 0);
     console.log(`The sum of the solved expressions is ${sumOfSolved}`);
   }
 
   partTwo(): void {
-
+    const converted = this.lines.map(line => InfixToPostfixConverter.convert(line, OperatorPrecedenceResolver.part2));
+    const solved = converted.map(collection => Solver.solve(collection));
+    const sumOfSolved = solved.reduce((acc, value) => acc + value, 0);
+    console.log(`The sum of the solved expressions is ${sumOfSolved}`);
   }
 }
