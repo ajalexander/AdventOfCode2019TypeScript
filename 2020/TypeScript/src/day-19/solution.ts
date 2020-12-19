@@ -27,6 +27,32 @@ class ConstantValue implements RulePart {
   }
 }
 
+class RuleGroup {
+  readonly parts: RulePart[];
+
+  constructor(parts: RulePart[]) {
+    this.parts = parts;
+  }
+
+  match(input: string, index: number) {
+    let matchedCharacters = 0;
+
+    for (let partIndex = 0; partIndex < this.parts.length; partIndex += 1) {
+      const partMatch = this.parts[partIndex].matches(input, index + matchedCharacters);
+      if (partMatch.matched) {
+        matchedCharacters += partMatch.charactersMatched;
+      } else {
+        return { matched: false };
+      }
+    }
+
+    return {
+      matched: true,
+      charactersMatched: matchedCharacters
+    };
+  }
+}
+
 class RulePointer implements RulePart {
   readonly otherRule: number;
   private readonly ruleMap: RuleMap;
@@ -44,33 +70,18 @@ class RulePointer implements RulePart {
 
 class Rule {
   readonly ruleNumber: number;
-  readonly ruleParts: RulePart[][];
+  readonly groups: RuleGroup[];
 
-  constructor(ruleNumber: number, ruleParts: RulePart[][]) {
+  constructor(ruleNumber: number, groups: RuleGroup[]) {
     this.ruleNumber = ruleNumber;
-    this.ruleParts = ruleParts;
+    this.groups = groups;
   }
 
   match(input: string, index = 0): RuleMatch {
-    for (let partsIndex = 0; partsIndex < this.ruleParts.length; partsIndex += 1) {
-      const rulePart = this.ruleParts[partsIndex];
-
-      let matchedCharacters = 0;
-      for (let partIndex = 0; partIndex < rulePart.length; partIndex += 1) {
-        const partMatch = rulePart[partIndex].matches(input, index + matchedCharacters);
-        if (partMatch.matched) {
-          matchedCharacters += partMatch.charactersMatched;
-        } else {
-          break;
-        }
-
-        if (partIndex === rulePart.length - 1) {
-          return {
-            matched: true,
-            charactersMatched: matchedCharacters
-          }
-        }
-      }
+    const partMatches = this.groups.map(group => group.match(input, index));
+    const successfulMatches = partMatches.filter(match => match.matched);
+    if (successfulMatches.length > 0) {
+      return successfulMatches[0];
     }
     return { matched: false };
   }
@@ -86,30 +97,46 @@ interface RuleMap {
 }
 
 class RuleParser {
-  static parse(ruleDefinitions: string[]) {
-    const ruleMap = {} as RuleMap;
+  private static parseConstant(value: string): RuleGroup {
+    return new RuleGroup([new ConstantValue(value) as RulePart]);
+  }
 
-    ruleDefinitions.forEach(ruleDefinition => {
-      const parts = ruleDefinition.split(':');
-      const ruleNumber = parseInt(parts[0]);
-      const definition = parts[1].trim();
-
-      const definitionParts = definition.split('|');
-      const rulesParts: RulePart[][] = definitionParts.map(definitionPart => {
-        const constantValueMatch = definitionPart.match(/^"(\w)"$/);
-        if (constantValueMatch) {
-          return [new ConstantValue(constantValueMatch[1]) as RulePart];
-        }
-
-        return definitionPart.trim().split(' ').map(otherRuleNumber => {
-          return new RulePointer(parseInt(otherRuleNumber), ruleMap) as RulePart;
-        });
-      });
-
-      const rule = new Rule(ruleNumber, rulesParts);
-      ruleMap[ruleNumber] = rule;
+  private static parsePointers(definitionPart: string, ruleMap: RuleMap): RuleGroup {
+    const ruleParts = definitionPart.trim().split(' ').map(otherRuleNumber => {
+      return new RulePointer(parseInt(otherRuleNumber), ruleMap) as RulePart;
     });
+    return new RuleGroup(ruleParts);
+  }
 
+  private static parseDefinitionPart(definitionPart: string, ruleMap: RuleMap): RuleGroup {
+    const constantValueMatch = definitionPart.match(/^"(\w)"$/);
+    if (constantValueMatch) {
+      return RuleParser.parseConstant(definitionPart[1]);
+    }
+
+    return RuleParser.parsePointers(definitionPart, ruleMap);
+  }
+
+  private static parseDefinition(definition: string, ruleMap: RuleMap): RuleGroup[] {
+    return definition.split('|').map(definitionPart => RuleParser.parseDefinitionPart(definitionPart, ruleMap));
+
+  }
+
+  private static parseRule(ruleDefinition: string, ruleMap: RuleMap) {
+    const parts = ruleDefinition.split(':');
+    const ruleNumber = parseInt(parts[0]);
+    const definition = parts[1].trim();
+
+    const groups = RuleParser.parseDefinition(definition, ruleMap);
+
+    const rule = new Rule(ruleNumber, groups);
+    ruleMap[ruleNumber] = rule;
+    return rule;
+  }
+
+  static parse(ruleDefinitions: string[]): RuleMap {
+    const ruleMap = {} as RuleMap;
+    ruleDefinitions.forEach(ruleDefinitions => RuleParser.parseRule(ruleDefinitions, ruleMap));
     return ruleMap;
   }
 }
