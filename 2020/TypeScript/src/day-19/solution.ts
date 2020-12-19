@@ -1,12 +1,13 @@
 import { GroupedFileInputChallenge } from "../common/dayChallenge";
 
-// const inputFile = 'example.txt';
+// const inputFile = 'example1.txt';
+// const inputFile = 'example2.txt';
 const inputFile = 'problemInput.txt';
 
 const inputPath = `${__dirname}/${inputFile}`;
 
 interface RulePart {
-  matches(input: string, index: number): RuleMatch;
+  matches(input: string, index: number): number[];
 }
 
 class ConstantValue implements RulePart {
@@ -16,40 +17,15 @@ class ConstantValue implements RulePart {
     this.value = value;
   }
 
-  matches(input: string, index: number): RuleMatch {
+  matches(input: string, index: number): number[] {
     if (input[index] === this.value) {
-      return {
-        matched: true,
-        charactersMatched: 1,
-      };
+      return [ 1 ];
     }
-    return { matched: false };
-  }
-}
-
-class RuleGroup {
-  readonly parts: RulePart[];
-
-  constructor(parts: RulePart[]) {
-    this.parts = parts;
+    return [];
   }
 
-  match(input: string, index: number) {
-    let matchedCharacters = 0;
-
-    for (let partIndex = 0; partIndex < this.parts.length; partIndex += 1) {
-      const partMatch = this.parts[partIndex].matches(input, index + matchedCharacters);
-      if (partMatch.matched) {
-        matchedCharacters += partMatch.charactersMatched;
-      } else {
-        return { matched: false };
-      }
-    }
-
-    return {
-      matched: true,
-      charactersMatched: matchedCharacters
-    };
+  toString() {
+    return `"${this.value}"`;
   }
 }
 
@@ -62,9 +38,42 @@ class RulePointer implements RulePart {
     this.ruleMap = ruleMap;
   }
 
-  matches(input: string, index: number): RuleMatch {
+  matches(input: string, index: number): number[] {
     const otherRule = this.ruleMap[this.otherRule];
-    return otherRule.match(input, index);
+    return otherRule.matches(input, index);
+  }
+
+  toString() {
+    return this.otherRule.toString();
+  }
+}
+
+class RuleGroup {
+  readonly parts: RulePart[];
+
+  constructor(parts: RulePart[]) {
+    this.parts = parts;
+  }
+
+  match(input: string, index: number): number[] {
+    let matchedCharacters = [0];
+    for (let partIndex = 0; partIndex < this.parts.length; partIndex += 1) {
+      const part = this.parts[partIndex];
+
+      const matchedCharactersAfterPart = [];
+      matchedCharacters.forEach(characterCount => {
+        const partMatchedCharacters = part.matches(input, index + characterCount);
+        partMatchedCharacters.forEach(partMatch => matchedCharactersAfterPart.push(characterCount + partMatch));
+      });
+
+      matchedCharacters = matchedCharactersAfterPart;
+    }
+
+    return matchedCharacters;
+  }
+
+  toString() {
+    return this.parts.map(part => part.toString()).join(' ');
   }
 }
 
@@ -77,19 +86,13 @@ class Rule {
     this.groups = groups;
   }
 
-  match(input: string, index = 0): RuleMatch {
-    const partMatches = this.groups.map(group => group.match(input, index));
-    const successfulMatches = partMatches.filter(match => match.matched);
-    if (successfulMatches.length > 0) {
-      return successfulMatches[0];
-    }
-    return { matched: false };
+  matches(input: string, index = 0): number[] {
+    return this.groups.flatMap(group => group.match(input, index));
   }
-}
 
-interface RuleMatch {
-  matched: boolean;
-  charactersMatched?: number;
+  toString() {
+    return `${this.ruleNumber}: ${this.groups.map(group => group.toString()).join(' | ')}`;
+  }
 }
 
 interface RuleMap {
@@ -145,8 +148,21 @@ export class Solution extends GroupedFileInputChallenge {
   private filterToValidValues(ruleMap: RuleMap, images: string[]) {
     const rule = ruleMap[0];
     return images.filter(image => {
-      const ruleMatch = rule.match(image);
-      return ruleMatch.matched && ruleMatch.charactersMatched === image.length;
+      const ruleMatches = rule.matches(image);
+      return ruleMatches.some(characterCount => characterCount === image.length);
+    });
+  }
+
+  private modifiedRuleDefition() {
+    return this.groups[0].map(line => {
+      switch (line) {
+        case '8: 42':
+          return '8: 42 | 42 8';
+        case '11: 42 31':
+          return '11: 42 31 | 42 11 31';
+        default:
+          return line;
+      }
     });
   }
 
@@ -166,5 +182,10 @@ export class Solution extends GroupedFileInputChallenge {
   }
 
   partTwo(): void {
+    const modifiedRules = this.modifiedRuleDefition();
+    const ruleMap = RuleParser.parse(modifiedRules);
+    const validImages = this.filterToValidValues(ruleMap, this.groups[1]);
+
+    console.log(`There are ${validImages.length} valid images`);
   }
 }
