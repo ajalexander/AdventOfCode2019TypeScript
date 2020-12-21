@@ -49,7 +49,7 @@ export class Solution extends FileInputChallenge {
     const allergenCount = allergens.size;
     const matchedAllergens = new Set<string>();
     const matchedIngredients = new Set<string>();
-    const map = new Map<string, string>();
+    const ingredientsToAllergens = new Map<string, string>();
 
     while (matchedAllergens.size < allergenCount) {
       allergens.forEach(allergen => {
@@ -61,14 +61,14 @@ export class Solution extends FileInputChallenge {
 
           matchedAllergens.add(allergen);
           matchedIngredients.add(ingredient);
-          map.set(ingredient, allergen);
+          ingredientsToAllergens.set(ingredient, allergen);
 
           allergens.delete(allergen);
         }
       });
     }
 
-    return map;
+    return ingredientsToAllergens;
   }
 
   private static classify(foods: Food[]): ClassifiedIngredients {
@@ -106,5 +106,14 @@ export class Solution extends FileInputChallenge {
   }
 
   partTwo(): void {
+    const foods = InputParser.parse(this.lines);
+    const classified = Solution.classify(foods);
+
+    const dangerousList = [...classified.ingredientsToAllergens]
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(item => item[0])
+      .join(',');
+
+    console.log(`The dangerous ingredients are ${dangerousList}`);
   }
 }
