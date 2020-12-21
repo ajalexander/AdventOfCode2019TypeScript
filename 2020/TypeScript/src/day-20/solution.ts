@@ -14,13 +14,27 @@ class ImageSquare {
   below?: ImageSquare;
   right?: ImageSquare;
   
-  private sideLength(): number {
+  private widthWithFrame(): number {
     return this.points.length;
+  }
+  
+  private heightWithFrame(): number {
+    return this.points[0].length;
   }
 
   constructor(tileNumber: number, points: string[]) {
     this.tileNumber = tileNumber;
     this.points = points;
+  }
+
+  rows(): string[] {
+    return this.points.slice(0);
+  }
+
+  imageWithoutFrame(): string[] {
+    return this.points
+      .slice(1, this.heightWithFrame() - 1)
+      .map(row => row.substring(1, row.length - 1));
   }
 
   topEdge(): string {
@@ -32,11 +46,11 @@ class ImageSquare {
   }
 
   bottomEdge(): string {
-    return this.points[this.sideLength() - 1].split('').reverse().join('');
+    return this.points[this.widthWithFrame() - 1].split('').reverse().join('');
   }
 
   rightEdge(): string {
-    return this.points.map(row => row[this.sideLength() - 1]).join('');
+    return this.points.map(row => row[this.heightWithFrame() - 1]).join('');
   }
 
   partiallyPlaced(): boolean {
@@ -76,13 +90,13 @@ class ImageSquare {
   rotateLeft() {
     const rotated = [];
 
-    for (let index = 0; index < this.sideLength(); index += 1) {
+    for (let index = 0; index < this.widthWithFrame(); index += 1) {
       rotated[index] = [];
     }
 
-    for (let rowIndex = 0; rowIndex < this.sideLength(); rowIndex += 1) {
-      for (let columnIndex = 0; columnIndex < this.sideLength(); columnIndex += 1) {
-        rotated[this.sideLength() - 1 - columnIndex][rowIndex] = this.points[rowIndex].charAt(columnIndex);
+    for (let rowIndex = 0; rowIndex < this.widthWithFrame(); rowIndex += 1) {
+      for (let columnIndex = 0; columnIndex < this.heightWithFrame(); columnIndex += 1) {
+        rotated[this.heightWithFrame() - 1 - columnIndex][rowIndex] = this.points[rowIndex].charAt(columnIndex);
       }
     }
 
@@ -91,6 +105,12 @@ class ImageSquare {
     });
 
     [this.above, this.left, this.below, this.right] = [this.right, this.above, this.left, this.below];
+  }
+
+  print() {
+    this.points.forEach(row => {
+      console.log(row);
+    })
   }
 }
 
@@ -253,7 +273,7 @@ class ImageSquireOrienter {
     }
   }
 
-  static reorientImages(imageSquares: ImageSquare[]) {
+  static reorientImages(imageSquares: ImageSquare[]): ImageSquare {
     const corners = this.findCorners(imageSquares);
     const corner = corners[0];
     corner.flip();
@@ -262,8 +282,81 @@ class ImageSquireOrienter {
     this.orientCornerToTopLeft(corner, unmatched);
     this.placeImages(corner, unmatched);
     this.completeConnections(corner);
+
+    return corner;
+  }
+}
+
+class CombinedImage extends ImageSquare {
+  static convertRowToImage(leftmost: ImageSquare): string[] {
+    const rows = leftmost.imageWithoutFrame();
+    let current = leftmost.right;
+    while (current) {
+      current.imageWithoutFrame().forEach((imagePart, index) => {
+        rows[index] += imagePart;
+      });
+      current = current.right;
+    }
+    return rows;
   }
 
+  static convertToImage(corner: ImageSquare): string[] {
+    const rows = [];
+    let current = corner;
+    while (current) {
+      rows.push(...this.convertRowToImage(current));
+      current = current.below;
+    }
+    return rows;
+  }
+
+  constructor(corner: ImageSquare) {
+    const imageDefinition = CombinedImage.convertToImage(corner);
+    super(null, imageDefinition);
+  }
+}
+
+class MonsterFinder {
+  static lengthOfMonster() {
+    return 15;
+  }
+
+  private static countMonstersInOrientation(image: CombinedImage) {
+    const monsterDefinition = {
+      row1: /..................#./,
+      row2: /#....##....##....###/,
+      row3: /.#..#..#..#..#..#.../,
+    };
+
+    let foundCount = 0;
+    const rows = image.rows();
+    for (let rowIndex = 0; rowIndex < rows.length - 2; rowIndex += 1) {
+      if (rows[rowIndex].match(monsterDefinition.row1) && rows[rowIndex + 1].match(monsterDefinition.row2) && rows[rowIndex + 2].match(monsterDefinition.row3)) {
+        foundCount += 1;
+      }
+    }
+    return foundCount;
+  }
+
+  private static countMonstersOnSide(image: CombinedImage) {
+    let foundCount = 0;
+    for (let i = 0; i < 4; i += 1) {
+      foundCount += this.countMonstersInOrientation(image);
+      image.rotateLeft();
+    }
+    return foundCount;
+  }
+
+  static countMonsters(image: CombinedImage) {
+    let foundCount = this.countMonstersOnSide(image);
+
+    if (!foundCount) {
+      image.flip();
+      foundCount = this.countMonstersOnSide(image);
+    }
+
+    return foundCount;
+  }
 }
 
 export class Solution extends GroupedFileInputChallenge {
@@ -287,6 +380,19 @@ export class Solution extends GroupedFileInputChallenge {
   }
 
   partTwo(): void {
+    const images = ImageParser.parse(this.groups);
+    const corner = ImageSquireOrienter.reorientImages(images);
 
+    const combinedImage = new CombinedImage(corner);
+    const monstersFound = MonsterFinder.countMonsters(combinedImage);
+
+    console.log(`There are ${monstersFound} monsters in the image`);
+
+    const pointsOfInterest = combinedImage.rows()
+      .map(row => row.split('#').length - 1)
+      .reduce((acc, value) => acc + value, 0);
+
+    const waterPoints = pointsOfInterest - monstersFound * MonsterFinder.lengthOfMonster();
+    console.log(`There are ${waterPoints} spots of water in the image`);
   }
 }
