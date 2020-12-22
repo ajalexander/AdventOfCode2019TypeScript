@@ -1,33 +1,10 @@
 import { FileInputChallenge } from "../common/dayChallenge";
+import { Stack } from "../common/stack";
 
 // const inputFile = 'example.txt';
 const inputFile = 'problemInput.txt';
 
 const inputPath = `${__dirname}/${inputFile}`;
-
-class Stack<T> {
-  private collection: T[];
-
-  constructor() {
-    this.collection = [];
-  }
-
-  isEmpty() {
-    return this.collection.length === 0;
-  }
-
-  push(item: T) {
-    this.collection.push(item);
-  }
-
-  peek(): T {
-    return this.collection[this.collection.length - 1];
-  }
-
-  pop(): T {
-    return this.collection.pop();
-  }
-}
 
 class OperatorPrecedenceResolver {
   static normal(operator: string) {
