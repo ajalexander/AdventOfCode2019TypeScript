@@ -28,4 +28,13 @@ export class Queue<T> {
   clone(): Queue<T> {
     return new Queue<T>(this.collection);
   }
+
+  cloneToDepth(toDepth: number): Queue<T> {
+    return new Queue<T>(this.collection.slice(0, toDepth));
+  }
+
+  equivalent(other: Queue<T>): boolean {
+    return this.collection.length === other.collection.length
+      && this.collection.every((value, index) => other.collection[index] === value);
+  }
 }

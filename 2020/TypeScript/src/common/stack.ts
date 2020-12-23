@@ -28,4 +28,9 @@ export class Stack<T> {
   clone(): Stack<T> {
     return new Stack<T>(this.collection);
   }
+
+  equivalent(other: Stack<T>): boolean {
+    return this.collection.length === other.collection.length
+      && this.collection.every((value, index) => other.collection[index] === value);
+  }
 }
