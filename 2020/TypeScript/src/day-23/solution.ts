@@ -54,28 +54,29 @@ class Game {
 
     cups.forEach(cup => this.cupMapping.set(cup.number, cup));
 
-    this.highestOrderedCup = [...this.cupMapping.keys()].sort()[this.cupMapping.size - 1];
+    const sortedKeys = [...this.cupMapping.keys()].sort((a,b) => a - b);
+    this.highestOrderedCup = sortedKeys[this.cupMapping.size - 1];
   }
 
   takeTurn() {
     this.moveCount += 1;
 
-    console.log(`-- move ${this.moveCount} --`);
-    console.log(`cups: ${this.toString()}`);
+    // console.log(`-- move ${this.moveCount} --`);
+    // console.log(`cups: ${this.toString()}`);
     
     const removedCups = this.selectNextCups();
 
-    console.log(`pick up: ${removedCups.map(removed => removed.number).join(', ')}`);
+    // console.log(`pick up: ${removedCups.map(removed => removed.number).join(', ')}`);
 
     const nextTarget = this.selectNextTarget(removedCups);
-    console.log(`destination: ${nextTarget.number}`);
+    // console.log(`destination: ${nextTarget.number}`);
 
     this.spliceOutRemovedCups(removedCups);
     this.spliceInRemovedCups(removedCups, nextTarget);
 
     this.current = this.current.next;
 
-    console.log();
+    // console.log();
   }
 
   toString(): string {
@@ -96,12 +97,21 @@ class Game {
 
   play(rounds = 10) {
     for (let i = 0; i < rounds; i += 1) {
+      // const currentState = this.currentState();
+      // const previousIndexForState = this.previousRounds.findIndex(roundState => {
+      //   return roundState.equals(currentState);
+      // });
+
+      // if (previousIndexForState) {
+
+      // }
+      // this.previousRounds.push(currentState);
       this.takeTurn();
     }
   }
 
   finalNumber(): number {
-    let current = this.cupMapping.get(1).next;
+    let current = this.getCup(1).next;
     const pieces = [];
     while (pieces.length < this.cupMapping.size - 1) {
       pieces.push(current.number);
@@ -109,6 +119,10 @@ class Game {
     }
 
     return parseInt(pieces.join(''));
+  }
+
+  getCup(cupNumber: number): Cup {
+    return this.cupMapping.get(cupNumber);
   }
 }
 
@@ -128,8 +142,15 @@ class Cup {
 }
 
 export class Solution extends DayChallenge {
-  private setupGame(input: string) {
+  private setupGame(input: string, maximumValues?: number) {
     const cups = input.split('').map(s => new Cup(parseInt(s)));
+
+    if (maximumValues) {
+      const maximumAlreadyIncluded = cups.map(cup => cup.number).sort()[cups.length - 1];
+      for (let i = maximumAlreadyIncluded + 1; i <= maximumValues; i += 1) {
+        cups.push(new Cup(i));
+      }
+    }
 
     cups.forEach((cup, index) => {
       const nextIndex = index < cups.length - 1 ? index + 1 : 0;
@@ -153,6 +174,14 @@ export class Solution extends DayChallenge {
   }
 
   partTwo(): void {
+    const game = this.setupGame(input, 1000000);
+    game.play(10000000);
+
+    const nextCups = [game.getCup(1).next, game.getCup(1).next.next];
+
+    const product = nextCups.reduce((acc, cup) => acc * cup.number, 1);
+
+    console.log(`The product of the previous cups (${nextCups[0].number} and ${nextCups[1].number}) is ${product}`);
   }
 
 }
