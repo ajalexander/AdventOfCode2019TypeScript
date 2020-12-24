@@ -63,16 +63,25 @@ class HexagonalGrid {
     }
   }
 
+  private dimensionValues(selector: (position: HexagonalPosition) => number) {
+    const values = [...this.tiles].map(tile => selector(tile.position));
+    values.sort((a, b) => a - b);
+    return {
+      minimum: values[0],
+      maximum: values[this.tiles.size - 1],
+    };
+  }
+
   constructor() {
     this.tilePositions = [];
     this.tiles = new Set<HexagonalTile>();
   }
 
-  getTile(position: HexagonalPosition) {
+  getTile(position: HexagonalPosition): HexagonalTile {
     this.ensureArrayReference(position);
     let tile = this.tilePositions[position.a][position.r][position.c];
     if (!tile) {
-      tile = new HexagonalTile();
+      tile = new HexagonalTile(position, this);
       this.tilePositions[position.a][position.r][position.c] = tile;
       this.tiles.add(tile);
     }
@@ -80,36 +89,91 @@ class HexagonalGrid {
   }
 
   getTiles(): HexagonalTile[] {
-    return [...this.tiles];
+    const dimensionA = this.dimensionValues(position => position.a);
+    const dimensionR = this.dimensionValues(position => position.r);
+    const dimensionC = this.dimensionValues(position => position.c);
+
+    const tiles = [];
+    for (let a = dimensionA.minimum; a <= dimensionA.maximum; a += 1) {
+      for (let r = dimensionR.minimum; r <= dimensionR.maximum; r += 1) {
+        for (let c = dimensionC.minimum; c <= dimensionC.maximum; c += 1) {
+          tiles.push(this.getTile(new HexagonalPosition(a, r, c)));
+        }
+      }
+    }
+    return tiles;
+  }
+
+  adjustColors() {
+    const toFlip: HexagonalTile[] = [];
+
+    this.getTiles().forEach(tile => {
+      const blackTileNeighbors = tile.getNeighbors().filter(other => other.color === Color.black).length;
+      if ((tile.color === Color.black) && (blackTileNeighbors === 0 || blackTileNeighbors > 2)) {
+        toFlip.push(tile);
+      } else if ((tile.color === Color.white) && (blackTileNeighbors === 2)) {
+        toFlip.push(tile);
+      }
+    });
+
+    toFlip.forEach(tile => tile.flip());
+  }
+
+  blackTileCount(): number {
+    return this.getTiles().filter(tile => tile.color === Color.black).length;
   }
 }
 
 class HexagonalTile {
+  private grid: HexagonalGrid;
+  private neighbors: HexagonalTile[];
   readonly position: HexagonalPosition;
   color: Color;
 
-  constructor() {
+  constructor(position: HexagonalPosition, grid: HexagonalGrid) {
+    this.position = position;
+    this.grid = grid;
     this.color = Color.white;
   }
 
   flip() {
     this.color = this.color === Color.white ? Color.black : Color.white;
   }
+
+  getNeighbors() {
+    if (!this.neighbors) {
+      this.neighbors = [
+        this.grid.getTile(this.position.next(Direction.east)),
+        this.grid.getTile(this.position.next(Direction.southeast)),
+        this.grid.getTile(this.position.next(Direction.southwest)),
+        this.grid.getTile(this.position.next(Direction.west)),
+        this.grid.getTile(this.position.next(Direction.northwest)),
+        this.grid.getTile(this.position.next(Direction.northeast)),
+      ];
+    }
+    return this.neighbors;
+  }
+
+  next(direction: Direction) {
+    const nextPosition = this.position.next(direction);
+    return this.grid.getTile(nextPosition);
+  }
 }
 
 class TileArranger {
-  static arrange(instructions: Queue<Direction>[]): HexagonalGrid {
-    const grid = new HexagonalGrid();
-    const referenceTile = new HexagonalPosition(0, 0, 0);
+  static arrange(instructionSets: Queue<Direction>[]): HexagonalGrid {
+    const startingPosition = new HexagonalPosition(0, 0, 0);
 
-    instructions.forEach(instruction => {
-      let currentPosition = referenceTile;
-      while (!instruction.isEmpty()) {
-        currentPosition = currentPosition.next(instruction.dequeue());
+    const grid = new HexagonalGrid();
+    const startingTile = grid.getTile(startingPosition);
+
+    instructionSets.forEach(instructionSet => {
+      let currentTile = startingTile;
+      while (!instructionSet.isEmpty()) {
+        currentTile = currentTile.next(instructionSet.dequeue());
       }
 
-      const tile = grid.getTile(currentPosition);
-      tile.flip();
+      currentTile.flip();
     });
 
     return grid;
@@ -147,11 +211,20 @@ export class Solution extends FileInputChallenge {
     const instructions = InstructionsParser.parse(this.lines);
     const grid = TileArranger.arrange(instructions);
 
-    const blackTiles = grid.getTiles().filter(tile => tile.color === Color.black);
-
-    console.log(`There are ${blackTiles.length} black tiles`);
+    console.log(`There are ${grid.blackTileCount()} black tiles`);
   }
 
   partTwo(): void {
+    const instructions = InstructionsParser.parse(this.lines);
+    const grid = TileArranger.arrange(instructions);
+
+    const maximumDays = 100;
+
+    for (let day = 1; day <= maximumDays; day += 1) {
+      grid.adjustColors();
+      // console.log(`There are ${grid.blackTileCount()} black tiles after ${day} days`);
+    }
+
+    console.log(`There are ${grid.blackTileCount()} black tiles after ${maximumDays} days`);
   }
 }
