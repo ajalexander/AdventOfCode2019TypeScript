@@ -21,10 +21,33 @@ enum Direction {
 }
 
 // See https://en.wikipedia.org/wiki/Hexagonal_Efficient_Coordinate_System
-interface HexagonalPosition {
-  a: number;
-  r: number;
-  c: number;
+class HexagonalPosition {
+  readonly a: number;
+  readonly r: number;
+  readonly c: number;
+
+  constructor(a: number, r: number, c: number) {
+    this.a = a;
+    this.r = r;
+    this.c = c;
+  }
+
+  next(direction: Direction) {
+    switch (direction) {
+      case Direction.east:
+        return new HexagonalPosition(this.a, this.r, this.c + 1);
+      case Direction.southeast:
+        return new HexagonalPosition(1 - this.a, this.r + this.a, this.c + this.a);
+      case Direction.southwest:
+        return new HexagonalPosition(1 - this.a, this.r + this.a, this.c - (1 - this.a));
+      case Direction.west:
+        return new HexagonalPosition(this.a, this.r, this.c - 1);
+      case Direction.northwest:
+        return new HexagonalPosition(1 - this.a, this.r - (1 - this.a), this.c - (1 - this.a));
+      case Direction.northeast:
+        return new HexagonalPosition(1 - this.a, this.r - (1 - this.a), this.c + this.a);
+    }
+  }
 }
 
 class HexagonalGrid {
@@ -75,33 +98,14 @@ class HexagonalTile {
 }
 
 class TileArranger {
-  private static getNextPosition(position: HexagonalPosition, direction: Direction): HexagonalPosition {
-    const { a, r, c } = position;
-
-    switch (direction) {
-      case Direction.east:
-        return { a, r, c: c + 1 };
-      case Direction.southeast:
-        return { a: 1 - a, r: r + a, c: c + a };
-      case Direction.southwest:
-        return { a: 1 - a, r: r + a, c: c - (1 - a) };
-      case Direction.west:
-        return { a, r, c: c - 1 };
-      case Direction.northwest:
-        return { a: 1 - a, r: r - (1 - a), c: c - (1 - a) };
-      case Direction.northeast:
-        return { a: 1 - a, r: r - (1 - a), c: c + a };
-    }
-  }
-
   static arrange(instructions: Queue<Direction>[]): HexagonalGrid {
     const grid = new HexagonalGrid();
-    const referenceTile = { a: 0, r: 0, c: 0 } as HexagonalPosition;
+    const referenceTile = new HexagonalPosition(0, 0, 0);
 
     instructions.forEach(instruction => {
       let currentPosition = referenceTile;
       while (!instruction.isEmpty()) {
-        currentPosition = this.getNextPosition(currentPosition, instruction.dequeue());
+        currentPosition = currentPosition.next(instruction.dequeue());
       }
 
       const tile = grid.getTile(currentPosition);
