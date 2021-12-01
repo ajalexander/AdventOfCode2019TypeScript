@@ -1,12 +1,12 @@
-import { ProblemBase } from "./common/problemBase";
+import { DailySolution } from "./common/problemBase";
 
 const dayNumber = () => parseInt(process.argv[2]);
 const paddedDay = (dayNumber: number) => dayNumber.toString().padStart(2, '0');
 const buildImportPath = (dayNumber: number) => `./day${paddedDay(dayNumber)}/solution.js`;
 const importRunner = async (dayNumber: number) => await import(buildImportPath(dayNumber));
-const constructRunner = async (dayNumber: number): Promise<ProblemBase> => {
+const constructRunner = async (dayNumber: number): Promise<DailySolution> => {
     const module = await importRunner(dayNumber);
-    return new module.Solution() as ProblemBase;
+    return new module.Solution() as DailySolution;
 }
 
 const runDay = async (dayNumber: number) => {

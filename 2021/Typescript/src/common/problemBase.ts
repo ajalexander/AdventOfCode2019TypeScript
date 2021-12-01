@@ -1,4 +1,11 @@
-export abstract class ProblemBase {
+export interface DailySolution {
+    day(): number;
+    partOne(): void;
+    partTwo(): void;
+    run(): void;
+}
+
+export abstract class ProblemBase implements DailySolution {
     abstract day(): number;
     abstract partOne(): void;
     abstract partTwo(): void;
