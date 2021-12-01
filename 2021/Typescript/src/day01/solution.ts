@@ -9,16 +9,16 @@ export class Solution extends ProblemBase {
     }
 
     partOne(): void {
-        Solution.countIncrease(input, 1);
+        this.countIncrease(input, 1);
     }
 
     partTwo(): void {
-        Solution.countIncrease(input, 3);
+        this.countIncrease(input, 3);
     }
 
-    private static countIncrease(input: string[], rangeSize: number) {
-        const parsedInput = Solution.convertInput(input);
-        const ranges = Solution.captureSlidingRanges(parsedInput, rangeSize);
+    private countIncrease(input: string[], rangeSize: number) {
+        const parsedInput = this.convertInput(input);
+        const ranges = this.captureSlidingRanges(parsedInput, rangeSize);
 
         let increasingCount = 0;
         for (let i = 1; i < ranges.length; i++) {
@@ -28,17 +28,16 @@ export class Solution extends ProblemBase {
         }
 
         console.log(`The distance increased ${increasingCount} times`);
-        
     }
 
-    private static convertInput(input: string[]): number[] {
+    private convertInput(input: string[]): number[] {
         return input.map(item => parseInt(item));
     }
 
-    private static captureSlidingRanges(input: number[], rangeSize: number): number[] {
-        let ranges = [];
+    private captureSlidingRanges(input: number[], rangeSize: number): number[] {
+        const ranges = [];
         for (let i = 0; i <= input.length - rangeSize; i++) {
-            let sum = input.slice(i, i + rangeSize).reduce((previous, current) => previous + current);
+            const sum = input.slice(i, i + rangeSize).reduce((previous, current) => previous + current);
             ranges.push(sum);
         }
         return ranges;

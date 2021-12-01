@@ -14,8 +14,8 @@ export abstract class ProblemBase implements DailySolution {
         console.log(`= Executing code for day ${this.day()} =`);
         console.log();
 
-        this.runPart(this.partOne, 1);
-        this.runPart(this.partTwo, 2);
+        this.runPart(() => this.partOne(), 1);
+        this.runPart(() => this.partTwo(), 2);
     }
 
     private runPart(partFunction: () => void, partNumber: number) {
