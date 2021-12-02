@@ -17,7 +17,7 @@ interface PositionState {
 class BasicPositionState implements PositionState {
     readonly horizontal: number;
     readonly depth: number;
-    constructor(horizontal: number = 0, depth: number = 0) {
+    constructor(horizontal = 0, depth = 0) {
         this.horizontal = horizontal;
         this.depth = depth;
     }
@@ -39,7 +39,7 @@ class AimedPositionState implements PositionState {
     readonly horizontal: number;
     readonly depth: number;
     readonly aim: number;
-    constructor(horizontal: number = 0, depth: number = 0, aim: number = 0) {
+    constructor(horizontal = 0, depth = 0, aim = 0) {
         this.horizontal = horizontal;
         this.depth = depth;
         this.aim = aim;
