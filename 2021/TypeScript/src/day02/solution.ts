@@ -1,7 +1,9 @@
-import { ProblemBase } from "../common/problemBase";
-import { actual, example } from './inputs';
+import { FileBasedProblemBase } from "../common/problemBase";
 
-const input = actual;
+// const inputFile = 'example.txt';
+const inputFile = 'problem.txt';
+
+const inputPath = `${__dirname}/${inputFile}`;
 
 interface PositionState {
     readonly horizontal: number;
@@ -56,7 +58,11 @@ class AimedPositionState implements PositionState {
     }
 }
 
-export class Solution extends ProblemBase {
+export class Solution extends FileBasedProblemBase {
+    constructor() {
+        super(inputPath);
+    }
+
     day(): number {
         return 2;
     }
@@ -70,7 +76,7 @@ export class Solution extends ProblemBase {
     }
 
     private runSimulation(position: PositionState) {
-        input.forEach(instruction => {
+        this.inputLines.forEach(instruction => {
             const [direction, amount] = instruction.split(' ');
             const parsedAmount = parseInt(amount);
             switch (direction) {

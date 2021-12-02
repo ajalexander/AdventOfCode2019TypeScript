@@ -4,7 +4,9 @@
   "description": "Code solutions for Advent of Code 2021",
   "main": "index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "npm run buildSource && npm run copyFiles",
+    "buildSource": "tsc",
+    "copyFiles": "node scripts/copyFilesToDist.js",
     "watch": "tsc -w",
     "lint": "eslint . --ext .ts"
   },

@@ -1,19 +1,25 @@
-import { ProblemBase } from "../common/problemBase";
-import { actual, example } from './inputs';
+import { FileBasedProblemBase } from "../common/problemBase";
 
-const input = actual;
+// const inputFile = 'example.txt';
+const inputFile = 'problem.txt';
 
-export class Solution extends ProblemBase {
+const inputPath = `${__dirname}/${inputFile}`;
+
+export class Solution extends FileBasedProblemBase {
+    constructor() {
+        super(inputPath);
+    }
+
     day(): number {
         return 1;
     }
 
     partOne(): void {
-        this.countIncrease(input, 1);
+        this.countIncrease(this.inputLines, 1);
     }
 
     partTwo(): void {
-        this.countIncrease(input, 3);
+        this.countIncrease(this.inputLines, 3);
     }
 
     private countIncrease(input: string[], rangeSize: number) {

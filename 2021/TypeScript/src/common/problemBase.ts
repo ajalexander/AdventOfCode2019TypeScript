@@ -1,3 +1,5 @@
+import { readInputFile } from './fileReader';
+
 export interface DailySolution {
     day(): number;
     partOne(): void;
@@ -29,5 +31,14 @@ export abstract class ProblemBase implements DailySolution {
 
         console.log(`== Elapsed time: ${duration} ms ==`);
         console.log();
+    }
+}
+
+export abstract class FileBasedProblemBase extends ProblemBase {
+    readonly inputLines: string[];
+
+    constructor(inputFile: string) {
+        super();
+        this.inputLines = readInputFile(inputFile);
     }
 }
