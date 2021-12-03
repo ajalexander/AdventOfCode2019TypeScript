@@ -10,9 +10,17 @@ interface PowerRates {
     epsilon: number;
 }
 
+interface LifeSupportRates {
+    oxygenRating: number;
+    co2Rating: number;
+}
+
 export class Solution extends FileBasedProblemBase {
+    readonly inputLength: number;
+
     constructor() {
         super(inputPath);
+        this.inputLength = this.inputLines[0].length;
     }
 
     day(): number {
@@ -20,30 +28,30 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partOne(): void {
-        const parsed = this.parseInputs();
+        const parsed = this.findGammaAndEpsilon();
 
         console.log(`Calculated inputs of: gamma - ${parsed.gamma}, epsilon - ${parsed.epsilon}`);
         console.log(`Calculated power consumption: ${parsed.gamma * parsed.epsilon}`);
     }
 
     partTwo(): void {
+        const parsed = this.findLifeSupportRates();
+
+        console.log(`Calculated inputs of: oxygen - ${parsed.oxygenRating}, co2 - ${parsed.co2Rating}`);
+        console.log(`Calculated life support: ${parsed.oxygenRating * parsed.co2Rating}`);
     }
 
-    private parseInputs(): PowerRates {
+    private findGammaAndEpsilon(): PowerRates {
         let gammaString = '';
         let epsilonString = '';
 
-        const transposed = this.transposeInputs();
+        const transposed = this.transposeInputs(this.inputLines);
 
         for (let position = 0; position < transposed.length; position += 1) {
-            const zeros = transposed[position].filter(value => value === 0).length;
-            const ones = transposed[position].filter(value => value === 1).length;
-
-            const least = (zeros > ones) ? '1' : '0';
-            const most = (zeros > ones) ? '0' : '1';
+            const significant = this.findSignificantBits(transposed[position]);
             
-            gammaString += most;
-            epsilonString += least;
+            gammaString += significant.most;
+            epsilonString += significant.least;
         }
 
         return {
@@ -52,11 +60,64 @@ export class Solution extends FileBasedProblemBase {
         };
     }
 
-    private transposeInputs(): number[][] {
+    private findLifeSupportRates(): LifeSupportRates {
+        let oxygenRating = this.findLifeSupportValue(true);
+        let co2Rating = this.findLifeSupportValue(false);
+        
+        return {
+            oxygenRating,
+            co2Rating,
+        };
+    }
+
+    private findLifeSupportValue(mostSignificant: boolean): number {
+        let possibleValues = this.inputLines.slice();
+        
+        for (let position = 0; position < this.inputLength && possibleValues.length > 1; position += 1) {
+            const transposed = this.transposeInputs(possibleValues);
+            const significant = this.findSignificantBits(transposed[position]);
+
+            let filterValue: string;
+            if (significant.counts.zeros === significant.counts.ones) {
+                filterValue = mostSignificant ? '1' : '0';
+            }
+            else {
+                filterValue = mostSignificant ? significant.most : significant.least;
+            }
+            
+            possibleValues = possibleValues.filter(item => item[position] === filterValue);
+        }
+
+        return parseInt(possibleValues[0], 2);
+    }
+
+    private findSignificantBits(input: number[]) {
+        const counted = this.countBitValues(input);
+
+        const least = (counted.zeros > counted.ones) ? '1' : '0';
+        const most = (counted.zeros > counted.ones) ? '0' : '1';
+
+        return {
+            most,
+            least,
+            counts: counted,
+        };
+    }
+
+    private countBitValues(input: number[]) {
+        const zeros = input.filter(value => value === 0).length;
+        const ones = input.filter(value => value === 1).length;
+
+        return {
+            zeros,
+            ones,
+        };
+    }
+
+    private transposeInputs(input: string[]): number[][] {
         const transposed = [];
-        const inputLength = this.inputLines[0].length;
-        for (let position = 0; position < inputLength; position += 1) {
-            transposed[position] = this.inputLines.map(line => parseInt(line[position]));
+        for (let position = 0; position < this.inputLength; position += 1) {
+            transposed[position] = input.map(line => parseInt(line[position]));
         }
         return transposed;
     }
