@@ -1,4 +1,4 @@
-import { readInputFile } from './fileReader';
+import { readInputFile, readFileIntoLineGroups } from './fileReader';
 
 export interface DailySolution {
     day(): number;
@@ -40,5 +40,15 @@ export abstract class FileBasedProblemBase extends ProblemBase {
     constructor(inputFile: string) {
         super();
         this.inputLines = readInputFile(inputFile);
+    }
+}
+
+export abstract class GroupedFileBasedProblemBase extends ProblemBase {
+    readonly inputGroups: string[][];
+
+    constructor(inputFile: string) {
+        super();
+        this.inputGroups = readFileIntoLineGroups(inputFile);
+
     }
 }
