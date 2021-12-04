@@ -61,8 +61,8 @@ export class Solution extends FileBasedProblemBase {
     }
 
     private findLifeSupportRates(): LifeSupportRates {
-        let oxygenRating = this.findLifeSupportValue(true);
-        let co2Rating = this.findLifeSupportValue(false);
+        const oxygenRating = this.findLifeSupportValue(true);
+        const co2Rating = this.findLifeSupportValue(false);
         
         return {
             oxygenRating,
