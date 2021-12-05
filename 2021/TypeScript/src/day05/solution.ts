@@ -20,7 +20,7 @@ class Line {
     }
 
     distance(): number {
-        return Math.abs(this.start.x - this.end.x) + Math.abs(this.start.y - this.end.y);
+        return Math.max(Math.abs(this.start.x - this.end.x), Math.abs(this.start.y - this.end.y));
     }
 
     positionsCovered(): Position[] {
@@ -58,7 +58,7 @@ class Line {
     }
 
     isDiagonal(): boolean {
-        return !this.isHorizontal() && !this.isVertical();
+        return Math.abs(this.start.x - this.end.x) === Math.abs(this.start.y - this.end.y);
     }
 }
 
@@ -168,7 +168,15 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partOne(): void {
-        const lines = parseInputs(this.inputLines).filter(line => line.isHorizontal() || line.isVertical());
+        this.findOverlaps(line => line.isHorizontal() || line.isVertical());
+    }
+
+    partTwo(): void {
+        this.findOverlaps(line => line.isHorizontal() || line.isVertical() || line.isDiagonal());
+    }
+
+    private findOverlaps(filterFunction: (line: Line) => boolean) {
+        const lines = parseInputs(this.inputLines).filter(filterFunction);
 
         const map = new SeafloorMap(lines);
         // map.print();
@@ -176,8 +184,6 @@ export class Solution extends FileBasedProblemBase {
         const overlappingPositions = map.overlappingPositions();
 
         console.log(`There are ${overlappingPositions.length} overlapping positions`);
-    }
 
-    partTwo(): void {
     }
 }
