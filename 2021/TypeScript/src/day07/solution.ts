@@ -17,6 +17,20 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partOne(): void {
+        this.findFuelCost((delta) => delta);
+    }
+
+    partTwo(): void {
+        this.findFuelCost((delta) => {
+            let cost = 0;
+            for (let stepCost = 1; stepCost <= delta; stepCost += 1) {
+                cost += stepCost;
+            }
+            return cost;
+        });
+    }
+
+    private findFuelCost(costStepFunction: (delta: number) => number): void {
         const originalPositions = parseInputs(this.inputLines[0]);
         const sorted = originalPositions.sort();
         const minimum = sorted[0];
@@ -26,7 +40,8 @@ export class Solution extends FileBasedProblemBase {
         let bestFuel = Infinity;
 
         for (let targetPosition = minimum; targetPosition <= maximum; targetPosition += 1) {
-            const fuelValue = originalPositions.map(position => Math.abs(targetPosition - position)).reduce((previous, current) => previous + current);
+            const fuelValues = originalPositions.map(position => costStepFunction(Math.abs(targetPosition - position)));
+            const fuelValue = fuelValues.reduce((previous, current) => previous + current);
             if (fuelValue < bestFuel) {
                 bestFuel = fuelValue;
                 bestValue = targetPosition;
@@ -34,8 +49,5 @@ export class Solution extends FileBasedProblemBase {
         }
 
         console.log(`The best target position is ${bestValue} with a fuel cost of ${bestFuel}`);
-    }
-
-    partTwo(): void {
     }
 }
