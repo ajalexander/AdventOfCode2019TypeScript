@@ -46,9 +46,23 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partTwo(): void {
+        const entries = parseInputs(this.inputLines);
+        const summedValue = entries.map(entry => {
+            const mappedValues = this.deduce(entry.inputValues);
+
+            let calculated = 0;
+            entry.outputValues.forEach(value => {
+                calculated *= 10;
+                calculated += mappedValues[value];
+            });
+
+            return calculated;
+        }).reduce((prev, curr) => prev + curr, 0);
+
+        console.log(`The sum of the output values is ${summedValue}`);
     }
 
-    private identifySignals(values: string[]): string[] {
+    private identifySignals(values: string[]): string[]{
         const identified: string[] = [];
 
         this.identify1(values, identified);
@@ -85,5 +99,51 @@ export class Solution extends FileBasedProblemBase {
         if (value) {
             identified[8] = value;
         }
+    }
+
+    private deduce(values: string[]) {
+        const identified = this.identifySignals(values);
+
+        this.deduceSixes(values, identified);
+        this.deduceFives(values, identified);
+
+        const map: {[key: string]: number} = {};
+        identified.forEach((value, index) => map[value] = index);
+
+        return map;
+    }
+
+    private deduceFives(values: string[], identified: string[]) {
+        const fives = values.filter(value => value.length === 5);
+        fives.forEach(value => {
+            if (this.isSubset(identified[1], value)) {
+                identified[3] = value;
+            } else if (this.intersection(identified[4], value).length === 3) {
+                identified[5] = value;
+            } else {
+                identified[2] = value;
+            }
+        });
+    }
+
+    private deduceSixes(values: string[], identified: string[]) {
+        const sixes = values.filter(value => value.length === 6);
+        sixes.forEach(value => {
+            if (this.isSubset(identified[4], value)) {
+                identified[9] = value;
+            } else if (!this.isSubset(identified[7], value)) {
+                identified[6] = value;
+            } else {
+                identified[0] = value;
+            }
+        });
+    }
+
+    private isSubset(possibleSubset: string, totalSet: string) {
+        return possibleSubset.split('').every(element => totalSet.includes(element));
+    }
+
+    private intersection(left: string, right: string) {
+        return left.split('').filter(element => right.includes(element)).join('');
     }
 }
