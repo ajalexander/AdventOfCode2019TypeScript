@@ -49,6 +49,31 @@ class FloorMap {
         return this.heightValues.filter(value => this.neighborsOf(value.position).every(neighbor => value.height < neighbor.height));
     }
 
+    findBasins(): Set<PositionHeight>[] {
+        const basins: Set<PositionHeight>[] = [];
+
+        this.findLowPoints().forEach(lowPoint => {
+            const basin = new Set<PositionHeight>([lowPoint]);
+            const toProcess = [lowPoint];
+
+            for (let i = 0; i < toProcess.length; i++) {
+                const current = toProcess[i];
+
+                basin.add(current);
+
+                this.neighborsOf(current.position).forEach(neighbor => {
+                    if (neighbor.height !== 9 && !basin.has(neighbor)) {
+                        toProcess.push(neighbor);
+                    }
+                });
+            }
+
+            basins.push(basin);
+        });
+
+        return basins;
+    }
+
     private addItemToList(x: number, y: number, list: PositionHeight[]) {
         const value = this.valueAt(x, y);
         if (value) {
@@ -87,5 +112,12 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partTwo(): void {
+        const floorMap = buildMap(this.inputLines);
+        const basins = floorMap.findBasins();
+        basins.sort((left, right) => right.size - left.size);
+        const largestBasins = basins.slice(0, 3);
+        const combinedSizes = largestBasins.map(basin => basin.size).reduce((prev, curr) => prev * curr, 1);
+
+        console.log(`The multiplied size is ${combinedSizes}`);
     }
 }
