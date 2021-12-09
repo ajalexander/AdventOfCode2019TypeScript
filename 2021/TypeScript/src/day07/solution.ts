@@ -13,7 +13,7 @@ export class Solution extends FileBasedProblemBase {
     }
 
     day(): number {
-        return 6;
+        return 7;
     }
 
     partOne(): void {
