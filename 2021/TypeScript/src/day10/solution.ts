@@ -9,20 +9,21 @@ const inputPath = `${__dirname}/${inputFile}`;
 interface PairedSet {
     opening: string;
     closing: string;
-    score: number;
+    illegalScore: number;
+    completedScore: number;
 }
 
 interface ParseResult {
     isCorrupt: boolean;
     isComplete: boolean;
-    invalidCharacter: string;
+    score: number;
 }
 
 const matchingSets: PairedSet[] = [
-    { opening: '(', closing: ')', score: 3 },
-    { opening: '[', closing: ']', score: 57 },
-    { opening: '{', closing: '}', score: 1197 },
-    { opening: '<', closing: '>', score: 25137 },
+    { opening: '(', closing: ')', illegalScore: 3, completedScore: 1 },
+    { opening: '[', closing: ']', illegalScore: 57, completedScore: 2 },
+    { opening: '{', closing: '}', illegalScore: 1197, completedScore: 3 },
+    { opening: '<', closing: '>', illegalScore: 25137, completedScore: 4 },
 ];
 
 export class Solution extends FileBasedProblemBase {
@@ -37,13 +38,18 @@ export class Solution extends FileBasedProblemBase {
     partOne(): void {
         const parsedResults = this.inputLines.map(line => this.parse(line));
         const corrupted = parsedResults.filter(result => result.isCorrupt);
-        const corruptedScores = corrupted.map(result => this.findSet(result.invalidCharacter).score);
-        const score = corruptedScores.reduce((prev, curr) => prev + curr, 0);
+        const score = corrupted.map(result => result.score).reduce((prev, curr) => prev + curr, 0);
 
         console.log(`The score for finding the ${corrupted.length} corrupted lines is ${score}`);
     }
 
     partTwo(): void {
+        const parsedResults = this.inputLines.map(line => this.parse(line));
+        const incomplete = parsedResults.filter(result => !result.isCorrupt && !result.isComplete);
+        const sorted = incomplete.sort((left, right) => left.score - right.score);
+        const middle = sorted[(sorted.length  - 1) / 2];
+
+        console.log(`The middle score for completing the ${incomplete.length} incomplete lines is ${middle.score}`);
     }
 
     private parse(line: string): ParseResult {
@@ -58,15 +64,21 @@ export class Solution extends FileBasedProblemBase {
                 if (currentStack.peek() === set.opening) {
                     currentStack.pop();
                 } else {
-                    return { isCorrupt: true, isComplete: false, invalidCharacter: current };
+                    return { isCorrupt: true, isComplete: false, score: set.illegalScore };
                 }
             }
         }
 
-        return { isCorrupt: false, isComplete: currentStack.size() === 0, invalidCharacter: '' };
+        let score = 0;
+        while (!currentStack.isEmpty()) {
+            score *= 5;
+            score += this.findSet(currentStack.pop()).completedScore;
+        }
+
+        return { isCorrupt: false, isComplete: score === 0, score };
     }
 
-    private findSet(character: string) {
+    private findSet(character: string | undefined) {
         return matchingSets.filter(set => set.opening === character || set.closing === character)[0];
     }
 
