@@ -95,6 +95,10 @@ class OctopusGrid {
         return this.flashedCount;
     }
 
+    allJustFlashed() {
+        return this.elements.every(element => element.octopus.energyLevel === 0);
+    }
+
     private findPrimedOctopuses() {
         return this.elements.filter(element => element.octopus.readyToFlash());
     }
@@ -143,5 +147,14 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partTwo(): void {
+        const grid = parseInputs(this.inputLines);
+        let stepsRequired = 0;
+
+        while (!grid.allJustFlashed()) {
+            stepsRequired += 1;
+            grid.step();
+        }
+
+        console.log(`First reached a syncronized state after ${stepsRequired} steps`);
     }
 }
