@@ -60,15 +60,15 @@ class CaveSystem {
         rightNode?.addConnection(leftNode);
     } 
 
-    findPaths() {
-        return this.nodes.filter(node => node.type === NodeType.start).flatMap(starting => this.findPathsFromNode(starting));
+    findPaths(allowSecondVisit = false) {
+        return this.nodes.filter(node => node.type === NodeType.start).flatMap(starting => this.findPathsFromNode(starting, allowSecondVisit));
     }
 
-    private findPathsFromNode(node: Node) {
-        return this.walkTree(node, []);
+    private findPathsFromNode(node: Node, allowSecondVisit: boolean) {
+        return this.walkTree(node, [], allowSecondVisit);
     }
 
-    private walkTree(node: Node, steps: Node[]) {
+    private walkTree(node: Node, steps: Node[], allowSecondVisit: boolean) {
         const paths: Node[][] = [];
         node.connected.forEach(connected => {
             const nextSteps = steps.slice();
@@ -76,9 +76,20 @@ class CaveSystem {
                 nextSteps.push(connected);
                 paths.push(nextSteps);
             }
-            if ((connected.type === NodeType.bigCave) || (connected.type === NodeType.smallCave && !steps.includes(connected))) {
+            else if (connected.type === NodeType.bigCave) {
                 nextSteps.push(connected);
-                this.walkTree(connected, nextSteps).forEach(path => paths.push(path));
+                this.walkTree(connected, nextSteps, allowSecondVisit).forEach(path => paths.push(path));
+            }
+            else if (connected.type === NodeType.smallCave) {
+                if (steps.includes(connected)) {
+                    if (allowSecondVisit) {
+                        nextSteps.push(connected);
+                        this.walkTree(connected, nextSteps, false).forEach(path => paths.push(path));
+                    }
+                } else {
+                    nextSteps.push(connected);
+                    this.walkTree(connected, nextSteps, allowSecondVisit).forEach(path => paths.push(path));
+                }
             }
         });
         return paths;
@@ -124,5 +135,9 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partTwo(): void {
+        const system = parseInputs(this.inputLines);
+        const paths = system.findPaths(true);
+
+        console.log(`There are ${paths.length} paths through the cave system`);
     }
 }
