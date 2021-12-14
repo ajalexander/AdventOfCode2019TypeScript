@@ -10,18 +10,49 @@ interface CharacterCount {
     count: number;
 }
 
-const parseInsertions = (lines: string[]) => {
-    return lines.reduce((map, line) => {
+interface Transformation {
+    from: string;
+    to: string[];
+}
+
+interface PairedState {
+    starting: string;
+    ending: string;
+    total: {[key: string]: number};
+}
+
+const parseTransformations = (lines: string[]): Transformation[] => {
+    return lines.map(line => {
         const [match, insertion] = line.split(' -> ');
-        map[match] = insertion;
-        return map;
-    }, {} as {[key: string]: string});
+        return {
+            from: match,
+            to: [match[0] + insertion, insertion + match[1]]
+        }
+    });
+};
+
+const parseInitialState = (line: string): PairedState => {
+    const initialState: {[key: string]: number} = {};
+
+    for (let i = 0; i < line.length - 1; i += 1) {
+        const key = line.substring(i, i + 2);
+        if (!initialState[key]) {
+            initialState[key] = 0;
+        }
+        initialState[key] = initialState[key] + 1;
+    }
+
+    return {
+        starting: line[0],
+        ending: line[line.length - 1],
+        total: initialState,
+    };
 };
 
 const parseInputs = (groups: string[][]) => {
     return {
-        starting: groups[0][0],
-        insertions: parseInsertions(groups[1]),
+        starting: parseInitialState(groups[0][0]),
+        transformations: parseTransformations(groups[1]),
     };
 };
 
@@ -35,11 +66,20 @@ export class Solution extends GroupedFileBasedProblemBase {
     }
 
     partOne(): void {
+        this.runTimes(10);
+    }
+
+    partTwo(): void {
+        this.runTimes(40);
+    }
+
+    private runTimes(steps: number) {
         const parsed = parseInputs(this.inputGroups);
 
         let state = parsed.starting;
-        for (let i = 0; i < 10; i += 1) {
-            state = this.step(state, parsed.insertions);
+        
+        for (let i = 0; i < steps; i += 1) {
+            state = this.runTransformations(state, parsed.transformations);
         }
 
         const counts = this.characterCounts(state);
@@ -49,36 +89,42 @@ export class Solution extends GroupedFileBasedProblemBase {
         console.log(`The quantity is ${maximum - minimum}`);
     }
 
-    partTwo(): void {
+    private runTransformations(currentState: PairedState, transformations: Transformation[]): PairedState {
+        const nextState: {[key: string]: number} = {};
+
+        transformations.forEach(transformation => {
+            transformation.to.forEach(transformed => {
+                if (!nextState[transformed]) {
+                    nextState[transformed] = 0;
+                }
+                nextState[transformed] = nextState[transformed] + (currentState.total[transformation.from] || 0);
+            });
+        });
+
+        return {
+            starting: currentState.starting,
+            ending: currentState.ending,
+            total: nextState,
+        };
     }
 
-    private step(currentState: string, insertions: {[key: string]: string}): string {
-        let nextState = '';
-        for (let i = 0; i < currentState.length - 1; i++) {
-            const toEvaluate = currentState.substring(i, i + 2);
-            const toInsert = insertions[toEvaluate];
-
-            nextState += toEvaluate[0];
-            if (toInsert) {
-                nextState += toInsert;
-            }
-        }
-        nextState += currentState[currentState.length - 1];
-
-        return nextState;
-    }
-
-    private characterCounts(input: string) {
+    private characterCounts(state: PairedState) {
         const map: {[key: string]: CharacterCount} = {};
 
-        for (let i = 0; i < input.length; i += 1) {
-            const character = input[i];
-            if (!map[character]) {
-                map[character] = { character, count: 0 };
-            }
-            map[character].count = map[character].count + 1;
-        }
+        Object.keys(state.total).forEach(key => {
+            const character = key[0];
+            this.addToCount(map, character, state.total[key]);
+        });
+
+        this.addToCount(map, state.ending, 1);
 
         return Object.values(map).sort((a, b) => b.count - a.count);
+    }
+
+    private addToCount(map: {[key: string]: CharacterCount}, character: string, toAdd: number) {
+        if (!map[character]) {
+            map[character] = { character, count: 0 };
+        }
+        map[character].count = map[character].count + toAdd;
     }
 }
