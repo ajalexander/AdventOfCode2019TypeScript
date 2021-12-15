@@ -6,13 +6,9 @@ const inputFile = 'problem.txt';
 
 const inputPath = `${__dirname}/${inputFile}`;
 
-interface Position {
+interface PositionedValue {
     x: number;
     y: number;
-}
-
-interface PositionedValue {
-    position: Position;
     value: number;
 }
 
@@ -23,8 +19,8 @@ class Grid {
 
     constructor(values: PositionedValue[]) {
         this.mappedValues = [];
-        values.map(value => value.position.y).forEach(y => this.mappedValues[y] = []);
-        values.forEach(value => this.mappedValues[value.position.y][value.position.x] = value);
+        values.map(value => value.y).forEach(y => this.mappedValues[y] = []);
+        values.forEach(value => this.mappedValues[value.y][value.x] = value);
         this.height = this.mappedValues.length;
         this.width = this.mappedValues[0].length;
     }
@@ -39,7 +35,7 @@ class Grid {
         }
 
         const startingPoint = this.startingPoint();
-        riskScores[startingPoint.position.y][startingPoint.position.x] = 0;
+        riskScores[startingPoint.y][startingPoint.x] = 0;
 
         const queue = new Queue<PositionedValue>([startingPoint]);
 
@@ -47,24 +43,24 @@ class Grid {
             const current = queue.dequeue() as PositionedValue;
 
             this.neighborsOf(current).forEach(neighbor => {
-                const calculatedValue = riskScores[current.position.y][current.position.x] + neighbor.value;
-                if (riskScores[neighbor.position.y][neighbor.position.x] > calculatedValue) {
-                    riskScores[neighbor.position.y][neighbor.position.x] = calculatedValue;
+                const calculatedValue = riskScores[current.y][current.x] + neighbor.value;
+                if (riskScores[neighbor.y][neighbor.x] > calculatedValue) {
+                    riskScores[neighbor.y][neighbor.x] = calculatedValue;
                     queue.enqueue(neighbor);
                 }
             });
         }
 
         const finalPoint = this.finalPoint();
-        return riskScores[finalPoint.position.y][finalPoint.position.x];
+        return riskScores[finalPoint.y][finalPoint.x];
     }
 
     private neighborsOf(value: PositionedValue) {
         const neighbors: PositionedValue[] = [];
-        this.addValueIfPresent(value.position.x - 1, value.position.y, neighbors);
-        this.addValueIfPresent(value.position.x + 1, value.position.y, neighbors);
-        this.addValueIfPresent(value.position.x, value.position.y - 1, neighbors);
-        this.addValueIfPresent(value.position.x, value.position.y + 1, neighbors);
+        this.addValueIfPresent(value.x - 1, value.y, neighbors);
+        this.addValueIfPresent(value.x + 1, value.y, neighbors);
+        this.addValueIfPresent(value.x, value.y - 1, neighbors);
+        this.addValueIfPresent(value.x, value.y + 1, neighbors);
         return neighbors;
 
     }
@@ -84,22 +80,29 @@ class Grid {
     }
 }
 
-const parseInputs = (inputLines: string[]) => {
+const setupPositionedValues = (inputLines: string[], timesToRepeat = 1) => {
     const positionedValues: PositionedValue[] = [];
 
-    for (let y = 0; y < inputLines.length; y += 1) {
-        for (let x = 0; x < inputLines[y].length; x += 1) {
-            positionedValues.push({
-                position: {
-                    x,
-                    y,
-                },
-                value: parseInt(inputLines[y][x]),
-            })
+    const height = inputLines.length;
+    const width = inputLines[0].length;
+
+    for (let yShift = 0; yShift < timesToRepeat; yShift += 1) {
+        for (let xShift = 0; xShift < timesToRepeat; xShift += 1) {
+            for (let y = 0; y < inputLines.length; y += 1) {
+                for (let x = 0; x < inputLines[y].length; x += 1) {
+                    const value = (parseInt(inputLines[y][x]) + yShift + xShift);
+                    const shiftedValue = (value > 9) ? value % 9 : value;
+                    positionedValues.push({
+                        x: x + width * xShift,
+                        y: y + height * yShift,
+                        value: shiftedValue,
+                    })
+                }
+            }
         }
     }
 
-    return new Grid(positionedValues);
+    return positionedValues;
 };
 
 export class Solution extends FileBasedProblemBase {
@@ -112,12 +115,18 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partOne(): void {
-        const grid = parseInputs(this.inputLines);
+        const values = setupPositionedValues(this.inputLines);
+        const grid = new Grid(values);
         const risk = grid.riskToEnd();
 
         console.log(`The minimum risk score is ${risk}`);
     }
 
     partTwo(): void {
+        const values = setupPositionedValues(this.inputLines, 5);
+        const grid = new Grid(values);
+        const risk = grid.riskToEnd();
+
+        console.log(`The minimum risk score is ${risk}`);
     }
 }
