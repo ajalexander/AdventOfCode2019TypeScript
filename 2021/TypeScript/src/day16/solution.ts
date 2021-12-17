@@ -5,7 +5,17 @@ const inputFile = 'problem.txt';
 
 const inputPath = `${__dirname}/${inputFile}`;
 
-const typeLiteral = 4;
+enum PacketType {
+    sum = 0,
+    product = 1,
+    minimum = 2,
+    maximum = 3,
+    literal = 4,
+    greaterThan = 5,
+    lessThan = 6,
+    equalTo = 7,
+}
+
 const versionLength = 3;
 const typeLength = 3;
 const numberPartLength = 5;
@@ -14,13 +24,13 @@ const containedPacketsLength = 11;
 
 class PacketResult {
     readonly version: number;
-    readonly type: number;
+    readonly type: PacketType;
     readonly processedBits: number;
     readonly depth: number;
     readonly directResult?: number
     readonly innerResults?: PacketResult[];
 
-    constructor(version: number, type: number, processedBits: number, depth: number, directResult?: number, innerResults?: PacketResult[]) {
+    constructor(version: number, type: PacketType, processedBits: number, depth: number, directResult?: number, innerResults?: PacketResult[]) {
         this.version = version;
         this.type = type;
         this.processedBits = processedBits;
@@ -37,6 +47,48 @@ class PacketResult {
         }
 
         return combined;
+    }
+
+    calculatedValue(): number {
+        if (this.innerResults) {
+            switch (this.type) {
+                case PacketType.sum:
+                    {
+                        return this.innerResults.map(result => result.calculatedValue()).reduce((prev, curr) => prev + curr, 0);
+                    }
+                    case PacketType.product:
+                    {
+                        return this.innerResults.map(result => result.calculatedValue()).reduce((prev, curr) => prev * curr, 1);
+                    }
+                    case PacketType.minimum:
+                    {
+                        return this.innerResults.map(result => result.calculatedValue()).sort((a, b) => a - b)[0];
+                    }
+                    case PacketType.maximum:
+                    {
+                        return this.innerResults.map(result => result.calculatedValue()).sort((a, b) => b - a)[0];
+                    }
+                    case PacketType.greaterThan:
+                    {
+                        return this.innerResults[0].calculatedValue() > this.innerResults[1].calculatedValue() ? 1 : 0;
+                    }
+                    case PacketType.lessThan:
+                    {
+                        return this.innerResults[0].calculatedValue() < this.innerResults[1].calculatedValue() ? 1 : 0;
+                    }
+                    case PacketType.equalTo:
+                    {
+                        return this.innerResults[0].calculatedValue() === this.innerResults[1].calculatedValue() ? 1 : 0;
+                    }
+            }
+
+            return -1;
+        }
+        else if (this.directResult) {
+            return this.directResult;
+        } else {
+            return NaN;
+        }
     }
 }
 
@@ -104,7 +156,7 @@ const parsePacket = (packet: string, depth: number): PacketResult => {
 
     const remainder = packet.substring(versionLength + typeLength);
 
-    if (type === typeLiteral) {
+    if (type === PacketType.literal) {
         const literalResult = parseLiteral(remainder);
         const result = literalResult.value;
         const processedBits =  versionLength + typeLength + literalResult.processedBits;
@@ -140,5 +192,10 @@ export class Solution extends FileBasedProblemBase {
     }
 
     partTwo(): void {
+        this.inputLines.forEach(line => {
+            const result = parse(line);
+
+            console.log(`The calculated value for ${line} is ${result.calculatedValue()}`);
+        });
     }
 }
