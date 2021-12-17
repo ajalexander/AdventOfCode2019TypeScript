@@ -16,6 +16,15 @@ interface Inputs {
     }
 }
 
+interface TrajectoryResult {
+    initialVelocity: {
+        x: number;
+        y: number;
+    },
+    maximumHeight: number;
+    landedInZone: boolean;
+}
+
 const parseInputs = (line: string): Inputs => {
     const match = line.match(/x=(.*)\.\.(.*), y=(.*)\.\.(.*)/);
     if (!match) {
@@ -46,51 +55,65 @@ export class Solution extends FileBasedProblemBase {
     partOne(): void {
         const inputs = parseInputs(this.inputLines[0]);
 
-        let maximumHeight = Number.MIN_SAFE_INTEGER;
-        const maximumY = this.getMaxSearchSpaceY(inputs);
+        const validTrajectories = this.findValidTrajectories(inputs);
+        const highestTrajectory = validTrajectories.sort((a, b) => b.maximumHeight - a.maximumHeight)[0];
+
+        console.log(`The maximum height on a path that lands in the target zone is ${highestTrajectory.maximumHeight}`);
+    }
+
+    partTwo(): void {
+        const inputs = parseInputs(this.inputLines[0]);
+
+        const validTrajectories = this.findValidTrajectories(inputs);
+
+        console.log(`There are ${validTrajectories.length} trajectories that land in the target zone`);
+    }
+
+    private findValidTrajectories(inputs: Inputs) {
+        const validTrajectories: TrajectoryResult[] = [];
+
         for (let x = 0; x <= inputs.x.maximum; x += 1) {
-            for (let y = 0; y <= maximumY; y += 1) {
-                let position = { x: 0, y: 0 };
-                let velocity = { x, y };
-                let inZone = false;
-                let localMaximumHeight = 0;
-                
-                while (position.x < inputs.x.maximum && position.y > inputs.y.minimum && !inZone) {
-                    position.x += velocity.x;
-                    position.y += velocity.y;
-
-                    if (velocity.x > 0) {
-                        velocity.x -= 1;
-                    }
-                    velocity.y -= 1;
-
-                    if (position.y > localMaximumHeight) {
-                        localMaximumHeight = position.y;
-                    }
-
-                    inZone = position.x >= inputs.x.minimum && position.x <= inputs.x.maximum && position.y >= inputs.y.minimum && position.y <= inputs.y.maximum;
-                }
-
-                if (inZone && localMaximumHeight > maximumHeight) {
-                    maximumHeight = localMaximumHeight;
+            for (let y = inputs.y.minimum; y <= Math.abs(inputs.y.minimum); y += 1) {
+                const trajectoryResult = this.tryTrajectory(x, y, inputs);
+                if (trajectoryResult.landedInZone) {
+                    validTrajectories.push(trajectoryResult);
                 }
             }
         }
 
-        console.log(`The maximum height on a path that lands in the target zone is ${maximumHeight}`);
+        return validTrajectories;
     }
 
-    partTwo(): void {
+    private tryTrajectory(x: number, y: number, inputs: Inputs): TrajectoryResult {
+        const position = { x: 0, y: 0 };
+        const velocity = { x, y };
+        let landedInZone = false;
+        let maximumHeight = 0;
+        
+        while (position.x <= inputs.x.maximum && position.y >= inputs.y.minimum && !landedInZone) {
+            position.x += velocity.x;
+            position.y += velocity.y;
+
+            if (velocity.x > 0) {
+                velocity.x -= 1;
+            }
+            velocity.y -= 1;
+
+            if (position.y > maximumHeight) {
+                maximumHeight = position.y;
+            }
+
+            landedInZone = this.positionInRange(position.x, position.y, inputs);
+        }
+
+        return {
+            initialVelocity: { x, y },
+            maximumHeight,
+            landedInZone: landedInZone
+        };
     }
 
-    // Since the y changes are symmetrical, the largest Y value can at most be the positive
-    // version of the minimum target Y value
-    private getMaxSearchSpaceY(inputs: Inputs) {
-        return Math.abs(inputs.y.minimum);
-    }
-
-    // The largest X value can at most be the positive version of the maximum target X value
-    private getMaxSearchSpaceX(inputs: Inputs) {
-        return Math.abs(inputs.x.maximum);
+    private positionInRange(x: number, y: number, inputs: Inputs) {
+        return x >= inputs.x.minimum && x <= inputs.x.maximum && y >= inputs.y.minimum && y <= inputs.y.maximum;
     }
 }
