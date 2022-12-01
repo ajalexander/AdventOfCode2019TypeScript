@@ -5,6 +5,8 @@ var dayNumber = Int32.Parse(arguments[1]);
 
 var twoDigitDay = dayNumber.ToString("00");
 
+var exampleMode = arguments.Length > 2 ? bool.Parse(arguments[2]) : false;
+
 var typeName = $"AdventOfCode2022.Day{twoDigitDay}.Solution";
 
 var assemby = System.Reflection.Assembly.GetExecutingAssembly();
@@ -22,7 +24,7 @@ else
     return;
   }
 
-  dynamic? solution = Activator.CreateInstance(solutionType) as SolutionBase;
+  dynamic? solution = Activator.CreateInstance(solutionType, args: exampleMode) as SolutionBase;
   if (solution == null)
   {
     Console.Error.WriteLine("Failed to instantiate solution");

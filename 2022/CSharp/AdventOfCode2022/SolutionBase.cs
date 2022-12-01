@@ -6,9 +6,16 @@ public abstract class SolutionBase
 {
   public abstract int Day { get; }
 
+  public bool ExampleMode { get; private set; }
+
+  protected SolutionBase(bool exampleMode)
+  {
+    ExampleMode = exampleMode;
+  }
+
   public void Run()
   {
-    Console.WriteLine("Running solution for day {0}...", Day);
+    Console.WriteLine("Running solution for day {0}{1}...", Day, ExampleMode ? " in example mode" : "");
     Console.WriteLine();
 
     var stopwatch = new Stopwatch();
@@ -49,8 +56,31 @@ public abstract class SolutionBase
       return reader.ReadToEnd();
   }
 
-  protected string[] ReadFileLines(string filename)
+  protected List<string> ReadFileLines(string filename)
   {
-    return ReadFileContent(filename).Split(Environment.NewLine);
+    return ReadFileContent(filename).Split(Environment.NewLine).ToList();
+  }
+
+  protected List<List<string>> ReadFileLineGroups(string filename)
+  {
+    var lines = ReadFileLines(filename);
+
+    var current = new List<string>();
+    var groups = new List<List<string>> { current };
+
+    lines.ForEach(line =>
+    {
+      if (string.IsNullOrEmpty(line))
+      {
+        current = new List<string>();
+        groups.Add(current);
+      }
+      else
+      {
+        current.Add(line);
+      }
+    });
+
+    return groups.Where(group => group.Count > 0).ToList();
   }
 }
