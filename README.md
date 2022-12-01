@@ -10,4 +10,6 @@ Code solutions for [Advent of Code](https://adventofcode.com).
   * [TypeScript](2020/TypeScript/)
 * 2021
   * [TypeScript](2021/TypeScript/)
+* 2022
+  * [C#](2022/CSharp/)
 
