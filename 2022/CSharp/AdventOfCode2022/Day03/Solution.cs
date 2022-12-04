@@ -22,6 +22,11 @@ public class Solution : SolutionBase
 
   protected override void PerformPart2()
   {
+    var badges = FindBadges();
+
+    var badgeScore = badges.Select(item => PriorityOfItem(item)).Sum();
+
+    Console.WriteLine("The score of the badges is {0}", badgeScore);
   }
 
   private Dictionary<char, int> InitializeScoreMap()
@@ -49,6 +54,30 @@ public class Solution : SolutionBase
         return contents.Top.ToArray().Intersect(contents.Bottom.ToArray()).Single();
       })
       .ToList();
+  }
+
+  private List<char> FindBadges()
+  {
+    return GetGroups()
+      .Select(group =>
+      {
+        IEnumerable<char> currentPossibilities = group[0].ToArray();
+
+        group.ForEach(item => currentPossibilities = currentPossibilities.Intersect(item.ToArray()));
+        
+        return currentPossibilities.Single();
+      }).ToList();
+  }
+
+  private IEnumerable<List<string>> GetGroups()
+  {
+    var groupSize = 3;
+
+    var individuals = GetInput();
+    for (int i = 0; i < individuals.Count / groupSize; i ++)
+    {
+      yield return individuals.Skip(i * groupSize).Take(groupSize).ToList();
+    }
   }
 
   private List<BackpackContents> GetBackpackContents()
