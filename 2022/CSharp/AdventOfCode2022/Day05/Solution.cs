@@ -12,25 +12,48 @@ public class Solution : SolutionBase
 
   protected override void PerformPart1()
   {
+    PerformPart(PerformMoveOperations9000);
+  }
+
+  protected override void PerformPart2()
+  {
+    PerformPart(PerformMoveOperations9001);
+  }
+
+  private void PerformPart(Action<Setup> moveOperationsFunction)
+  {
     var setup = GetSetup();
-    PerformMoveOperations(setup);
+    moveOperationsFunction(setup);
 
     var topOfStacks = setup.Locations.Values.Select(location => location.Contents.Peek());
     
     Console.WriteLine("The top of the stacks are: {0}", string.Join(" ", topOfStacks));
   }
 
-  protected override void PerformPart2()
-  {
-  }
-
-  private void PerformMoveOperations(Setup setup)
+  private void PerformMoveOperations9000(Setup setup)
   {
     foreach (var moveOperation in setup.Operations)
     {
       for (int i = 0; i < moveOperation.Quantity; i += 1)
       {
         setup.Locations[moveOperation.ToStack].Contents.Push(setup.Locations[moveOperation.FromStack].Contents.Pop());
+      }
+    }
+  }
+
+  private void PerformMoveOperations9001(Setup setup)
+  {
+    foreach (var moveOperation in setup.Operations)
+    {
+      var temporaryStack = new Stack<string>();
+      for (int i = 0; i < moveOperation.Quantity; i += 1)
+      {
+        temporaryStack.Push(setup.Locations[moveOperation.FromStack].Contents.Pop());
+      }
+
+      foreach (var crate in temporaryStack)
+      {
+        setup.Locations[moveOperation.ToStack].Contents.Push(crate);
       }
     }
   }
