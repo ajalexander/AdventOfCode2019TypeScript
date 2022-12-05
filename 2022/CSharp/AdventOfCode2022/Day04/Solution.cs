@@ -11,22 +11,46 @@ public class Solution : SolutionBase
   protected override void PerformPart1()
   {
     var assignments = GetAssignments();
-    var overlapping = assignments.Where(assignment => OverlappingAssignment(assignment));
+    var overlapping = assignments.Where(assignment => FullyOverlappingAssignment(assignment));
 
     Console.WriteLine("There are {0} overlapping assignments", overlapping.Count());
   }
 
   protected override void PerformPart2()
   {
+    var assignments = GetAssignments();
+    var overlapping = assignments.Where(assignment => PartiallyOverlappingAssignment(assignment));
+
+    Console.WriteLine("There are {0} overlapping assignments", overlapping.Count());
   }
 
-  private bool OverlappingAssignment(PairAssignments assignments)
+  private bool FullyOverlappingAssignment(PairAssignments assignments)
   {
     if (assignments.First.Beginning < assignments.Second.Beginning && assignments.First.End < assignments.Second.End)
     {
       return false;
     }
     if (assignments.First.Beginning > assignments.Second.Beginning && assignments.First.End > assignments.Second.End)
+    {
+      return false;
+    }
+
+    return true;
+  }
+
+  private bool PartiallyOverlappingAssignment(PairAssignments assignments)
+  {
+    if (assignments.First.Beginning <= assignments.Second.Beginning)
+    {
+      if (assignments.First.End < assignments.Second.Beginning)
+      {
+        return false;
+      }
+
+      return true;
+    }
+    
+    if (assignments.Second.End < assignments.First.Beginning)
     {
       return false;
     }
