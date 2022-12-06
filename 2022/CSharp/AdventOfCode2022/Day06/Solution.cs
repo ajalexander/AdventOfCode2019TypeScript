@@ -19,12 +19,27 @@ public class Solution : SolutionBase
 
   protected override void PerformPart2()
   {
+    GetInput()
+      .ForEach(input => {
+        var markerPosition = LocateMessageMarker(input);
+        Console.WriteLine("The message marker is at {0}", markerPosition);
+      });
   }
 
   private int LocateBufferMarker(string input)
   {
-    var currentValues = input.Substring(0, 4).ToList();
-    var counter = 4;
+    return LocateMarker(input, 4);
+  }
+
+  private int LocateMessageMarker(string input)
+  {
+    return LocateMarker(input, 14);
+  }
+
+  private int LocateMarker(string input, int markerLength)
+  {
+    var currentValues = input.Substring(0, markerLength).ToList();
+    var counter = markerLength;
     while (!ContainsUniqueValues(currentValues))
     {
       counter += 1;
