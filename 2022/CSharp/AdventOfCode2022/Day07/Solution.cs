@@ -21,6 +21,17 @@ public class Solution : SolutionBase
 
   protected override void PerformPart2()
   {
+    var root = GetDirectory();
+    var totalSpace = 70000000L;
+    var requiredSpace = 30000000L;
+
+    var freespace = totalSpace - root.Size;
+    var difference = requiredSpace - freespace;
+
+    var possibleDirectories = root.FlattendSubdirectories.Where(sub => sub.Size >= difference);
+    var smallestPossibleDirectory = possibleDirectories.OrderBy(sub => sub.Size).First();
+
+    Console.WriteLine("The total size of the smallest possible directory to delete is {0}", smallestPossibleDirectory.Size);
   }
 
   private DeviceDirectory GetDirectory()
