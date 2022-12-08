@@ -18,6 +18,10 @@ public class Solution : SolutionBase
 
   protected override void PerformPart2()
   {
+    var grid = GetTreeGrid();
+    var mostScenic = grid.TreePositions.Max(p => grid.CalculatedScenicScore(p));
+
+    Console.WriteLine("The most scenic tree scores a {0}", mostScenic);
   }
 
   private TreeGrid GetTreeGrid()
@@ -87,6 +91,47 @@ public class TreeGrid
     var positionsToCheck = TreePositions.Where(selector);
     var hidden = positionsToCheck.Any(p => GetHeight(p) >= GetHeight(position));
     return hidden;
+  }
+
+  public int CalculatedScenicScore(Position position)
+  {
+    var scores = new List<int>();
+
+    scores.Add(TreesVisibleInVector(position, p => p.X == position.X && p.Y < position.Y, c => c.OrderByDescending(p => p.Y)));
+    scores.Add(TreesVisibleInVector(position, p => p.X == position.X && p.Y > position.Y, c => c.OrderBy(p => p.Y)));
+    scores.Add(TreesVisibleInVector(position, p => p.X < position.X && p.Y == position.Y, c => c.OrderByDescending(p => p.X)));
+    scores.Add(TreesVisibleInVector(position, p => p.X > position.X && p.Y == position.Y, c => c.OrderBy(p => p.Y)));
+
+    var sum = 1;
+    foreach (var score in scores)
+    {
+      sum *= score;
+    }
+
+    return sum;
+  }
+
+  private int TreesVisibleInVector(Position position, Func<Position, bool> selector, Func<IEnumerable<Position>, IOrderedEnumerable<Position>> orderFunction)
+  {
+    var positionsInVector = TreesInVector(position, selector, orderFunction);
+    var count = 0;
+    foreach (var other in positionsInVector)
+    {
+      count += 1;
+      if (GetHeight(other) >= GetHeight(position))
+      {
+        break;
+      }
+    }
+
+    return count;
+  }
+
+  private IEnumerable<Position> TreesInVector(Position position, Func<Position, bool> selector, Func<IEnumerable<Position>, IOrderedEnumerable<Position>> orderFunction)
+  {
+    var positionsInLine = TreePositions.Where(selector).OrderBy(p => p.X);
+    var ordered = orderFunction(positionsInLine);
+    return ordered;
   }
 
   private int GetHeight(Position position)
