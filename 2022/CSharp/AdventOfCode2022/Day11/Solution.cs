@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Text.RegularExpressions;
 
 namespace AdventOfCode2022.Day11;
@@ -13,7 +14,7 @@ public class Solution : SolutionBase
   protected override void PerformPart1()
   {
     var monkeys = GetMonkeys();
-    TakeTurns(monkeys, 20);
+    TakeTurns(monkeys, 20, 3);
 
     var mostActiveMonkeys = monkeys.OrderByDescending(monkey => monkey.InspectionCount).Take(2).ToList();
     var monkeyBusiness = mostActiveMonkeys[0].InspectionCount * mostActiveMonkeys[1].InspectionCount;
@@ -23,15 +24,27 @@ public class Solution : SolutionBase
 
   protected override void PerformPart2()
   {
+    var monkeys = GetMonkeys();
+    TakeTurns(monkeys, 10000, 1, true);
+
+    var mostActiveMonkeys = monkeys.OrderByDescending(monkey => monkey.InspectionCount).Take(2).ToList();
+    var monkeyBusiness = mostActiveMonkeys[0].InspectionCount * mostActiveMonkeys[1].InspectionCount;
+
+    Console.WriteLine("The monkey business score is {0}", monkeyBusiness);
   }
 
-  private void TakeTurns(List<Monkey> monkeys, int turnCount)
+  private void TakeTurns(List<Monkey> monkeys, int turnCount, int worryReductionDivisor, bool reportProgress = false)
   {
     for (var i = 0; i < turnCount; i += 1)
     {
       foreach (var monkey in monkeys)
       {
-        monkey.TakeTurn();
+        monkey.TakeTurn(worryReductionDivisor);
+      }
+
+      if (reportProgress && (i > 0) && (i % (turnCount / 100)) == 0)
+      {
+        Console.WriteLine("Finished {0} turns", i);
       }
     }
   }
@@ -58,9 +71,9 @@ public class Solution : SolutionBase
 
     var monkey = monkeyMap[monkeyId];
 
-    var testDivisor = Int32.Parse(Regex.Match(definition[3], "Test: divisible by (\\d+)").Groups[1].Value);
-    var trueMonkeyId = Int32.Parse(Regex.Match(definition[4], "If true: throw to monkey (\\d+)").Groups[1].Value);
-    var falseMonkeyId = Int32.Parse(Regex.Match(definition[5], "If false: throw to monkey (\\d+)").Groups[1].Value);
+    var testDivisor = int.Parse(Regex.Match(definition[3], "Test: divisible by (\\d+)").Groups[1].Value);
+    var trueMonkeyId = int.Parse(Regex.Match(definition[4], "If true: throw to monkey (\\d+)").Groups[1].Value);
+    var falseMonkeyId = int.Parse(Regex.Match(definition[5], "If false: throw to monkey (\\d+)").Groups[1].Value);
 
     monkey.SetupTest(testDivisor, monkeyMap[trueMonkeyId], monkeyMap[falseMonkeyId]);
   }
@@ -70,7 +83,7 @@ public class Solution : SolutionBase
     var monkeyId = Int32.Parse(Regex.Match(definition[0], "Monkey (\\d+)").Groups[1].Value);
 
     var startingItems = Regex.Match(definition[1], "Starting items: (.+)").Groups[1].Value;
-    var parsedItems = startingItems.Replace(" ", "").Split(",").Select(item => Int32.Parse(item));
+    var parsedItems = startingItems.Replace(" ", "").Split(",").Select(item => ulong.Parse(item));
 
     var worryFunction = GetWorryFunction(definition[2]);
 
@@ -84,22 +97,22 @@ public class Solution : SolutionBase
     return monkey;
   }
 
-  private Func<int, int> GetWorryFunction(string definitionLine)
+  private Func<BigInteger, BigInteger> GetWorryFunction(string definitionLine)
   {
     var operationMatch = Regex.Match(definitionLine, "Operation: new = (.+) (.) (.+)");
     var operatorSymbol = operationMatch.Groups[2].Value;
     var left = operationMatch.Groups[1].Value;
     var right = operationMatch.Groups[3].Value;
 
-    Func<int, int> leftValue = (int old) => (left == "old") ? old : Int32.Parse(left);
-    Func<int, int> rightValue = (int old) => (right == "old") ? old : Int32.Parse(right);
+    Func<BigInteger, BigInteger> leftValue = (BigInteger old) => (left == "old") ? old : BigInteger.Parse(left);
+    Func<BigInteger, BigInteger> rightValue = (BigInteger old) => (right == "old") ? old : BigInteger.Parse(right);
 
     switch (operatorSymbol)
     {
       case "+":
-        return (int value) => leftValue(value) + rightValue(value);
+        return (BigInteger value) => leftValue(value) + rightValue(value);
       case "*":
-        return (int value) => leftValue(value) * rightValue(value);
+        return (BigInteger value) => leftValue(value) * rightValue(value);
     }
 
     throw new Exception();
@@ -115,27 +128,27 @@ public class Monkey
 {
   public int Id { get; private set; }
 
-  public Queue<int> Items { get; private set; }
+  public Queue<BigInteger> Items { get; private set; }
 
-  public Func<int, int> WorryOperation { get; private set; }
+  public Func<BigInteger, BigInteger> WorryOperation { get; private set; }
 
-  public int InspectionCount { get; private set; }
+  public BigInteger InspectionCount { get; private set; }
 
-  private Func<int, Monkey> _testAndThrow = (int _) => { throw new Exception(); };
+  private Func<BigInteger, Monkey> _testAndThrow = (BigInteger _) => { throw new Exception(); };
 
-  public Monkey(int id, Func<int, int> worryOperation)
+  public Monkey(int id, Func<BigInteger, BigInteger> worryOperation)
   {
     Id = id;
-    Items = new Queue<int>();
+    Items = new Queue<BigInteger>();
     WorryOperation = worryOperation;
   }
 
   public void SetupTest(int testDivisor, Monkey ifTrue, Monkey ifFalse)
   {
-    _testAndThrow = (int item) => ((item % testDivisor) == 0) ? ifTrue : ifFalse;
+    _testAndThrow = (BigInteger item) => ((item % testDivisor) == 0) ? ifTrue : ifFalse;
   }
 
-  public void TakeTurn()
+  public void TakeTurn(int worryReductionDivisor)
   {
     while (Items.Count > 0)
     {
@@ -143,7 +156,7 @@ public class Monkey
 
       var item = Items.Dequeue();
       var newLevel = WorryOperation(item);
-      var reduced = newLevel / 3;
+      var reduced = newLevel / (uint) worryReductionDivisor;
 
       var targetMonkey = _testAndThrow(reduced);
       targetMonkey.Items.Enqueue(reduced);
