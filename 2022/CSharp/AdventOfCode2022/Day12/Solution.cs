@@ -11,13 +11,22 @@ public class Solution : SolutionBase
   protected override void PerformPart1()
   {
     var map = GetMap();
-    var pathLength = map.DeterminePathLength();
+    var pathLength = map.DeterminePathLength(map.Starting);
 
     Console.WriteLine("It will take {0} steps to reach the end point", pathLength);
   }
 
   protected override void PerformPart2()
   {
+    var map = GetMap();
+    var possibleStarts = map.Locations.Where(location => location.HeightValue == 1);
+
+    var pathLengths = possibleStarts
+      .Select(location => map.DeterminePathLength(location.Position));
+    
+    var minimumPathLength = pathLengths.Min();
+
+    Console.WriteLine("It will take {0} steps to reach the end point", minimumPathLength);
   }
 
   private Map GetMap()
@@ -90,12 +99,12 @@ public class Map
     _byPosition = locations.ToDictionary(location => location.Position, location => location);
   }
 
-  public int DeterminePathLength()
+  public int DeterminePathLength(Position starting)
   {
     var costs = _byPosition.Keys.ToDictionary(position => position, _ => int.MaxValue);
-    costs[Starting] = 0;
+    costs[starting] = 0;
 
-    var queue = new Queue<Position>(new [] { Starting });
+    var queue = new Queue<Position>(new [] { starting });
 
     while (queue.Count > 0)
     {
